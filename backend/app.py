@@ -63,10 +63,10 @@ def create_flight():
         # Calculate duration assuming a speed of 15 km/minute
         duration = distance / 15
         flight = Flight(
-            airline_code="AE",  # This should be dynamic based on your application's requirements
+            airline_code="AE",  
             date_time=data['flight_time'],
-            duration=duration,  # Example duration, you may want to calculate this
-            distance=distance,  # Example distance, you may want to calculate this
+            duration=duration,  
+            distance=distance, 
             source_airport=source_airport.airport_code,
             destination_airport=destination_airport.airport_code,
             aircraft_type_id=data['vehicle_type_id']

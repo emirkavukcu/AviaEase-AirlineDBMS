@@ -145,17 +145,40 @@ def seat_plan_auto(flight_number, vehicle_type_id):
 def assign_seats(senior_pilots, junior_pilots, trainee_pilots, chief_cabin_crews, regular_cabin_crews, chefs, passengers, flight_number, vehicle_type_id):
     
     if(vehicle_type_id == 1 or vehicle_type_id == 2):
-        index = SeatMap.query.filter(SeatMap.aircraft_type_id == vehicle_type_id).first().id
-        for i in range(len(senior_pilots)):
-          db.session.add(FlightSeatAssignment(
-              flight_number=flight_number,
-              seat_map_id=index,
-              seater_type="pilot",
-              seater_id=senior_pilots[i].pilot_id
-          ))
-          
         
-
+        index = SeatMap.query.filter(SeatMap.aircraft_type_id == vehicle_type_id, SeatMap.seater_type == "pilot").first().id
+        db.session.add(FlightSeatAssignment(
+            flight_number=flight_number,
+            seat_map_id=index,
+            seater_type="pilot",
+            seater_id=senior_pilots[0].pilot_id
+        ))
+        index += 1
+        db.session.add(FlightSeatAssignment(
+            flight_number=flight_number,
+            seat_map_id=index,
+            seater_type="pilot",
+            seater_id=junior_pilots[0].pilot_id
+        ))
+        index += 1
+        for pilot in trainee_pilots:
+            db.session.add(FlightSeatAssignment(
+                flight_number=flight_number,
+                seat_map_id=index,
+                seater_type="pilot",
+                seater_id=pilot
+            ))
+            index += 1
+        index = SeatMap.query.filter(SeatMap.aircraft_type_id == vehicle_type_id, SeatMap.seater_type == "cabin_crew").first().id
+        for cabin_crew in chief_cabin_crews:
+            db.session.add(FlightSeatAssignment(
+                flight_number=flight_number,
+                seat_map_id=index,
+                seater_type="cabin_crew",
+                seater_id=cabin_crew
+            ))
+            index += 1
+        
     
 
         
