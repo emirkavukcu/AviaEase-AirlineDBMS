@@ -1,0 +1,285 @@
+from models import db
+from models import Flight, AircraftType, SeatMap, Airport, Pilot, CabinCrew, Passenger, FlightSeatAssignment
+from faker import Faker
+import random
+import numpy as np
+import airportsdata
+from sqlalchemy.orm.attributes import flag_modified
+
+nationality_locale_mapping = {
+    'Chinese': ('zh_CN', 'Mandarin'),
+    'Indian': ('hi_IN', 'Hindi'),
+    'American': ('en_US', 'English'),
+    'Indonesian': ('id_ID', 'Indonesian'),
+    'Brazilian': ('pt_BR', 'Portuguese'),
+    'Pakistani': ('ur_PK', 'Urdu'),
+    'Nigerian': ('en_NG', 'English'),  
+    'Bangladeshi': ('bn_BD', 'Bengali'),
+    'Russian': ('ru_RU', 'Russian'),
+    'Japanese': ('ja_JP', 'Japanese'),
+    'Mexican': ('es_MX', 'Spanish'),
+    'Filipino': ('tl_PH', 'Filipino'),  
+    'Egyptian': ('ar_EG', 'Arabic'),
+    'Vietnamese': ('vi_VN', 'Vietnamese'),
+    'Turkish': ('tr_TR', 'Turkish'),
+    'Iranian': ('fa_IR', 'Persian'),
+    'German': ('de_DE', 'German'),
+    'Sweden': ('sv_SE', 'Swedish'),
+    'French': ('fr_FR', 'French'),
+    'Thai': ('th_TH', 'Thai'),
+    'British': ('en_GB', 'English'),
+    'Italian': ('it_IT', 'Italian'),
+    'South Korean': ('ko_KR', 'Korean'),
+    'Colombian': ('es_CO', 'Spanish'),
+    'Spanish': ('es_ES', 'Spanish'),
+    'Ukrainian': ('uk_UA', 'Ukrainian'),
+    'Kenyan': ('sw_KE', 'Swahili'),  
+    'Argentine': ('es_AR', 'Spanish'),
+}
+
+def populate_seatmaps():
+        
+    # Populate Boeing 737 and Airbus A320 seat map
+    for i in range(1,3):
+        for k in range(1, 5):  # 4 Pilot seats
+            db.session.add(SeatMap(aircraft_type_id = i, seat_row="PL", seat_number=k, seat_type="pilot"))
+        for k in range(1, 13):  # 12 Crew seats
+            db.session.add(SeatMap(aircraft_type_id = i, seat_row="CR", seat_number=k, seat_type="crew"))
+        # 30 Businnes seats
+        for row in 'ABCDE':  
+            for num in range(1, 7):  
+                db.session.add(SeatMap(aircraft_type_id = i, seat_row=row, seat_number=num, seat_type="business"))
+
+        # 90 Economy seats
+        for row in 'ABCDEFGHIJKLMNO':  
+            for num in range(1, 7):  
+                db.session.add(SeatMap(aircraft_type_id = i, seat_row=row, seat_number=num, seat_type="economy"))
+
+        db.session.commit()
+
+    # Populate Boeing 777 seat map
+    for k in range(1, 7):  # 6 Pilot seats
+        db.session.add(SeatMap(aircraft_type_id = 3, seat_row="PL", seat_number=k, seat_type="pilot"))
+        
+    for k in range(1, 17):  # 16 Crew seats
+        db.session.add(SeatMap(aircraft_type_id = 3, seat_row="CR", seat_number=k, seat_type="crew"))
+
+    # 40 Businnes seats
+    for row in 'ABCDE':  
+        for num in range(1, 9):  
+          db.session.add(SeatMap(aircraft_type_id = 3, seat_row=row, seat_number=num, seat_type="business"))
+
+    # 120 Economy seats
+    for row in 'ABCDEFGHIJKLMNO':  
+        for num in range(1, 9):  
+            db.session.add(SeatMap(aircraft_type_id = 3, seat_row=row, seat_number=num, seat_type="economy"))
+
+    db.session.commit()
+
+def populate_aircraft_types():
+    db.session.add(AircraftType(
+        name="Boeing 737",
+        seat_count=136,
+        crew_limit=16,  
+        passenger_limit=120,  
+        standard_menu = [
+            'Chicken Caesar Salad',  
+            'Vegetarian Pasta Primavera',  
+            'Beef Stroganoff with Rice',  
+            'Salmon with Lemon Butter Sauce',  
+        ]
+    ))
+
+    db.session.add(AircraftType(
+        name="Airbus A320",
+        seat_count=136,
+        crew_limit=16,  
+        passenger_limit=120,  
+        standard_menu = [
+            'Roasted Chicken with Vegetables',  
+            'Vegan Lentil and Mushroom Stew',  
+            'Grilled Shrimp over Saffron Rice',  
+            'Mixed Nut Yogurt Parfait',  
+        ]
+    ))
+
+    db.session.add(AircraftType(
+        name="Boeing 777",
+        seat_count=182,
+        crew_limit=22,  
+        passenger_limit=160,  
+        standard_menu = [
+            'Stuffed Chicken Breast', 
+            'Butternut Squash Risotto',  
+            'Asian Beef Salad ',  
+            'Chickpea andPotato Curry',  
+            'Glazed Salmon with Broccoli',  
+            'Chocolate Mousse', 
+        ]
+    ))
+    
+    db.session.commit()
+
+def populate_pilots(n):
+    fake = Faker()
+    for _ in range(n):
+        nationality = random.choice(list(nationality_locale_mapping.keys()))
+        gender = random.choice(['male', 'female'])
+        if(gender == 'male'):
+            name = fake.name_male()
+        else:
+            name = fake.name_female()
+        # Generate age using a normal distribution centered at 40
+        age = max(22, int(np.random.normal(40, 10)))
+        known_languages = ['English']
+        if(nationality != 'American'):
+            known_languages.append(nationality_locale_mapping[nationality][1])
+        vehicle_type_id = random.randint(1, 3)
+        
+        if age < 30:
+            seniority_level = 'trainee'
+            allowed_range = 2000
+        else:
+            seniority_level = random.choices(['junior', 'senior'], weights=(70, 30), k=1)[0]
+            allowed_range = random.choice([5000, 10000, 15000, 20000])
+
+        pilot = Pilot(
+            name=name,
+            age=age,
+            gender=gender,
+            nationality=nationality,
+            known_languages=known_languages,
+            vehicle_type_id=vehicle_type_id,
+            allowed_range=allowed_range,
+            seniority_level=seniority_level,
+            scheduled_flights=[]  # Initialize to ensure it's not null
+        )
+        
+        db.session.add(pilot)
+    
+    db.session.commit()
+
+def populate_cabin_crew(n):
+    dishes = [
+    'Grilled Salmon with Dill Sauce',
+    'Roasted Chicken with Rosemary',
+    'Vegetable Lasagna',
+    'Beef Bourguignon',
+    'Thai Green Curry',
+    'Mushroom Risotto',
+    'Quinoa Salad with Avocado',
+    'Pulled Pork Tacos',
+    'Shrimp Paella', 
+    'Vegan Burger'
+    ]
+    fake = Faker()
+    for _ in range(n):
+        nationality = random.choice(list(nationality_locale_mapping.keys()))
+        age = max(18, int(np.random.normal(35, 15))) 
+        gender = random.choice(['male', 'female'])
+        if(gender == 'male'):
+            name = fake.name_male()
+        else:
+            name = fake.name_female()
+        attendant_type = random.choices(['chief', 'regular', 'chef'], weights=(20, 60, 20), k=1)[0]
+        known_languages = ['English']
+        if(nationality != 'American'):
+            known_languages.append(nationality_locale_mapping[nationality][1])
+        vehicle_type_ids = random.sample(range(1, 4), random.randint(1, 3)) 
+        dish_recipes = None
+        if attendant_type == 'chef':
+            dish_recipes = random.sample(dishes, random.randint(2, 4))
+
+        cabin_crew_member = CabinCrew(
+            name=name,
+            age=age,
+            gender=gender,
+            nationality=nationality,
+            known_languages=known_languages,
+            attendant_type=attendant_type,
+            vehicle_type_ids=vehicle_type_ids,
+            dish_recipes=dish_recipes,
+            scheduled_flights=[]  # Initialize to ensure it's not null
+        )
+        
+        db.session.add(cabin_crew_member)
+    
+    db.session.commit()
+
+def populate_passengers(n):
+    passengers = []
+    fake = Faker()
+    # Create all passengers
+    for _ in range(n):
+        age = random.randint(0, 90)  # Assume passenger age range is 0 to 90
+        nationality = random.choice(list(nationality_locale_mapping.keys()))
+        gender=random.choice(['male', 'female']),
+        if(gender == 'male'):
+            name = fake.name_male()
+        else:
+            name = fake.name_female()
+        passenger = Passenger(
+            name=name,
+            nationality=nationality,
+            gender=gender,
+            age=age,
+            parent_id=None,  # Will be updated for infants if applicable
+            affiliated_passenger_ids=[],  # Initialize to ensure it's not null
+            scheduled_flights=[]  # Initialize to ensure it's not null
+        )
+        passengers.append(passenger)
+        db.session.add(passenger)
+
+    db.session.commit()
+
+    # Assign parents to infants (consider age > 20 for parents)
+    infant_passengers = [p for p in passengers if p.age <= 2]
+    adult_passengers = [p for p in passengers if p.age > 20]
+    for infant in infant_passengers:
+        if adult_passengers:
+            infant.parent_id = random.choice(adult_passengers).passenger_id
+
+    # Implement affiliations ensuring no passenger is affiliated with more than one group
+    affiliated = set()  # Keep track of passengers who are already affiliated
+    potential_affiliates = [p for p in passengers if p.age > 2 and p.passenger_id is not None]  # Exclude infants from affiliations
+
+    while len(affiliated) < int(0.2 * n) and potential_affiliates:
+        primary = random.choice(potential_affiliates)
+        potential_affiliates.remove(primary)
+        if primary in affiliated:
+            continue  # Skip if already affiliated
+
+        num_affiliates = random.randint(1, 2)
+        group = random.sample([p for p in potential_affiliates if p not in affiliated], k=num_affiliates)
+
+        # Update affiliations
+        primary.affiliated_passenger_ids = primary.affiliated_passenger_ids + [p.passenger_id for p in group]
+        flag_modified(primary, "affiliated_passenger_ids")  # Mark as modified
+        for other in group:
+            other.affiliated_passenger_ids = other.affiliated_passenger_ids + [primary.passenger_id] + [another.passenger_id for another in group if another != other]
+            flag_modified(other, "affiliated_passenger_ids")  # Mark as modified
+            affiliated.add(other)
+
+        affiliated.add(primary)
+
+    db.session.commit()
+
+
+def populate_airports():
+    # Load all airports data with IATA codes
+    all_airports = airportsdata.load('IATA')
+    
+    for code, details in all_airports.items():
+        if 'iata' in details and details['iata'] and 'lat' in details and 'lon' in details:
+            # Create a new Airport instance
+            new_airport = Airport(
+                airport_code=details['iata'],
+                name=details.get('name', ''),
+                city=details.get('city', ''),
+                country=details.get('country', ''),
+                latitude=details.get('lat', 0),
+                longitude=details.get('lon', 0)
+            )
+            db.session.add(new_airport)
+    
+    db.session.commit()
