@@ -1,0 +1,9 @@
+Flask
+requests
+python-dotenv
+numpy
+SQLAlchemy
+Flask-SQLAlchemy
+Faker
+airportsdata
+psycopg2

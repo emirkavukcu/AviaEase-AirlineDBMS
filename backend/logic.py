@@ -3,6 +3,8 @@ from datetime import datetime, timedelta
 import random
 from models import db, Flight, AircraftType, Airport, Pilot, CabinCrew, Passenger, SeatMap, FlightSeatAssignment
 import numpy as np
+import random
+from sqlalchemy.exc import SQLAlchemyError
 
 def calculate_distance(lat1, lon1, lat2, lon2):
     R = 6371.0
@@ -40,7 +42,7 @@ def find_available_pilots(flight_id, pilot_type, num_needed):
         ).filter(Pilot.pilot_id.notin_(unavailable_pilots)
         ).order_by(db.func.random()).first()
         if pilot is None:
-            return False
+            return "Error"
         if (pilot.allowed_range < flight_distance) or (not scheduleIsAvailable(flight_start_time, flight_end_time, "Pilot", "pilot_id")):
             unavailable_pilots.add(pilot.pilot_id)
         else:
@@ -50,7 +52,6 @@ def find_available_pilots(flight_id, pilot_type, num_needed):
 def find_available_cabin_crew(flight_id, cabin_crew_type, num_needed):
     flight_start_time = Flight.query.get(flight_id).flight_time
     flight_end_time = flight_start_time + timedelta(minutes = Flight.query.get(flight_id).duration)
-    flight_distance = Flight.query.get(flight_id).distance
     vehicle_type_id = Flight.query.get(flight_id).vehicle_type_id
 
     unavailable_cabin_crew = set()
@@ -70,7 +71,6 @@ def find_available_cabin_crew(flight_id, cabin_crew_type, num_needed):
 def find_available_passengers(flight_id, num_needed):
     flight_start_time = Flight.query.get(flight_id).flight_time
     flight_end_time = flight_start_time + timedelta(minutes = Flight.query.get(flight_id).duration)
-    flight_distance = Flight.query.get(flight_id).distance
 
     unavailable_passengers = set()
     found_passengers = []
@@ -94,11 +94,11 @@ def seat_plan_auto(flight_number, vehicle_type_id):
         junior_pilot_num_needed = 1
         trainee_pilot_num_needed = random.randint(0, 2)
         chief_cabin_crew_num_needed = 2
-        regular_cabin_crew_num_needed = random.randint(2, 4)
+        regular_cabin_crew_num_needed = random.randint(4, 8)
         chef_num_needed = random.randint(0, 2)
         passenger_num_needed = max(10, int(np.random.normal(70, 20)))
-        if passenger_num_needed > 120:
-            passenger_num_needed = 120
+        if passenger_num_needed > 122:
+            passenger_num_needed = 122
 
     # Boeing 777
     elif(vehicle_type_id == 3):
@@ -114,12 +114,12 @@ def seat_plan_auto(flight_number, vehicle_type_id):
 
     senior_pilots = find_available_pilots(flight_number, "senior", senior_pilot_num_needed)
     if senior_pilots == "Error":
-        
         return "Not enough available senior pilots"
+    
     junior_pilots = find_available_pilots(flight_number, "junior", junior_pilot_num_needed)
     if junior_pilots == "Error":
-        
         return "Not enough available junior pilots"
+    
     trainee_pilots = find_available_pilots(flight_number, "trainee", trainee_pilot_num_needed)
     if trainee_pilots == "Error":
         return "Not enough available trainee pilots"
@@ -140,44 +140,121 @@ def seat_plan_auto(flight_number, vehicle_type_id):
     passengers = find_available_passengers(flight_number, passenger_num_needed)
     if passengers == "Error":
         return "Not enough available passengers"
-    
+
+    assign_seats(senior_pilots, junior_pilots, trainee_pilots, chief_cabin_crews, regular_cabin_crews, chefs, passengers, flight_number, vehicle_type_id)    
     
 def assign_seats(senior_pilots, junior_pilots, trainee_pilots, chief_cabin_crews, regular_cabin_crews, chefs, passengers, flight_number, vehicle_type_id):
     
-    if(vehicle_type_id == 1 or vehicle_type_id == 2):
+    if(vehicle_type_id == 1 or vehicle_type_id == 2):     
+        seniorPilotIdx = SeatMap.query.filter(SeatMap.aircraft_type_id == vehicle_type_id, SeatMap.seater_type == "pilot").first().id
+        juniorPilotIdx = seniorPilotIdx + 1
+        traineePilotIdx = juniorPilotIdx + 1
+        chiefCabinCrewIdx = traineePilotIdx + 2
+        regularCabinCrewIdx = chiefCabinCrewIdx + 2
+        chefIdx = regularCabinCrewIdx + 8
+   
+    elif(vehicle_type_id == 3):
+        seniorPilotIdx = SeatMap.query.filter(SeatMap.aircraft_type_id == vehicle_type_id, SeatMap.seater_type == "pilot").first().id
+        juniorPilotIdx = seniorPilotIdx + 2
+        traineePilotIdx = juniorPilotIdx + 2
+        chiefCabinCrewIdx = traineePilotIdx + 2
+        regularCabinCrewIdx = chiefCabinCrewIdx + 4
+        chefIdx = regularCabinCrewIdx + 10
         
-        index = SeatMap.query.filter(SeatMap.aircraft_type_id == vehicle_type_id, SeatMap.seater_type == "pilot").first().id
-        db.session.add(FlightSeatAssignment(
-            flight_number=flight_number,
-            seat_map_id=index,
-            seater_type="pilot",
-            seater_id=senior_pilots[0].pilot_id
-        ))
-        index += 1
-        db.session.add(FlightSeatAssignment(
-            flight_number=flight_number,
-            seat_map_id=index,
-            seater_type="pilot",
-            seater_id=junior_pilots[0].pilot_id
-        ))
-        index += 1
-        for pilot in trainee_pilots:
+    for i in range(len(senior_pilots)):
+        db.session.add(FlightSeatAssignment(flight_id=flight_number, seat_map_id= seniorPilotIdx + i, seater_id=senior_pilots[i], seater_type="SeniorPilot"))
+    for i in range(len(junior_pilots)):
+        db.session.add(FlightSeatAssignment(flight_id=flight_number, seat_map_id= juniorPilotIdx + i, seater_id=junior_pilots[i], seater_type="JuniorPilot"))
+    for i in range(len(trainee_pilots)):
+        db.session.add(FlightSeatAssignment(flight_id=flight_number, seat_map_id= traineePilotIdx + i, seater_id=trainee_pilots[i], seater_type="TraineePilot"))
+    for i in range(len(chief_cabin_crews)):
+        db.session.add(FlightSeatAssignment(flight_id=flight_number, seat_map_id= chiefCabinCrewIdx + i, seater_id=chief_cabin_crews[i], seater_type="ChiefCabinCrew"))
+    for i in range(len(regular_cabin_crews)):
+        db.session.add(FlightSeatAssignment(flight_id=flight_number, seat_map_id= regularCabinCrewIdx + i, seater_id=regular_cabin_crews[i], seater_type="RegularCabinCrew"))
+    if(len(chefs) > 0):
+        for i in range(len(chefs)):
+            db.session.add(FlightSeatAssignment(flight_id=flight_number, seat_map_id= chefIdx + i, seater_id=chefs[i], seater_type="ChefCabinCrew"))
+    
+    assign_seats_for_passengers(passengers, flight_number, vehicle_type_id)
+
+def assign_seats_for_passengers(passengers, flight_number, vehicle_type_id):
+  # Determine total passenger seats based on the aircraft type
+  total_seats = 122 if vehicle_type_id in [1, 2] else 160
+
+  # Fetch seat maps for passenger seats
+  seat_maps = SeatMap.query.filter(
+    SeatMap.aircraft_type_id == vehicle_type_id,
+    SeatMap.seat_type.in_(['business', 'economy'])
+  ).order_by(SeatMap.id).all()
+
+  # Create a map of seat groups to their available seat ids
+  seat_groups = {}
+  for seat in seat_maps:
+    if seat.seat_group not in seat_groups:
+      seat_groups[seat.seat_group] = []
+    seat_groups[seat.seat_group].append(seat.id)
+
+  # Shuffle seat groups to randomize seat assignment
+  shuffled_seat_groups = list(seat_groups.items())
+  random.shuffle(shuffled_seat_groups)
+
+  for group in shuffled_seat_groups:
+    random.shuffle(group[1])  # Shuffle the seat IDs within each group
+
+  # Prepare to track assigned seats and passengers
+  assigned_seats = {}
+  assigned_passengers = set()
+
+  # Assign seats
+  for passenger in passengers:
+    # Skip if passenger has already been assigned a seat
+    if passenger.passenger_id in assigned_passengers:
+      continue
+
+    affiliated_ids = passenger.affiliated_passenger_ids or []
+    affiliated_passengers = [p for p in passengers if p.passenger_id in affiliated_ids]
+
+    # Attempt to seat affiliated passengers together
+    for group, seats in shuffled_seat_groups:
+      # Check if the group can accommodate this passenger and all their affiliates
+      if all(p.passenger_id not in assigned_passengers for p in affiliated_passengers) and len(seats) >= len(affiliated_passengers) + 1:
+        # Assign seats to the main passenger and their affiliates
+        assigned_seats[passenger.passenger_id] = seats.pop(0)
+        assigned_passengers.add(passenger.passenger_id)
+        for affiliated_passenger in affiliated_passengers:
+          assigned_seats[affiliated_passenger.passenger_id] = seats.pop(0)
+          assigned_passengers.add(affiliated_passenger.passenger_id)
+        break
+    else:
+      # If no suitable group found, assign the next available seat
+      for group, seats in shuffled_seat_groups:
+        if seats and passenger.passenger_id not in assigned_passengers:
+          assigned_seats[passenger.passenger_id] = seats.pop(0)
+          assigned_passengers.add(passenger.passenger_id)
+          break
+
+  # Store the seat assignments in the database
+    try:
+        for passenger_id, seat_id in assigned_seats.items():
             db.session.add(FlightSeatAssignment(
-                flight_number=flight_number,
-                seat_map_id=index,
-                seater_type="pilot",
-                seater_id=pilot
+                flight_id=flight_number,
+                seat_map_id=seat_id,
+                seater_id=passenger_id,
+                seater_type='Passenger'
             ))
-            index += 1
-        index = SeatMap.query.filter(SeatMap.aircraft_type_id == vehicle_type_id, SeatMap.seater_type == "cabin_crew").first().id
-        for cabin_crew in chief_cabin_crews:
-            db.session.add(FlightSeatAssignment(
-                flight_number=flight_number,
-                seat_map_id=index,
-                seater_type="cabin_crew",
-                seater_id=cabin_crew
-            ))
-            index += 1
+        db.session.commit()
+        return True
+    except SQLAlchemyError as e:
+        db.session.rollback()
+        print(f"Database error during seat assignment: {str(e)}")
+        return False
+
+
+
+
+
+
+        
         
     
 

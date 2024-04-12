@@ -45,15 +45,26 @@ def populate_seatmaps():
             db.session.add(SeatMap(aircraft_type_id = i, seat_row="PL", seat_number=k, seat_type="pilot"))
         for k in range(1, 13):  # 12 Crew seats
             db.session.add(SeatMap(aircraft_type_id = i, seat_row="CR", seat_number=k, seat_type="crew"))
-        # 30 Businnes seats
-        for row in 'ABCDE':  
-            for num in range(1, 7):  
-                db.session.add(SeatMap(aircraft_type_id = i, seat_row=row, seat_number=num, seat_type="business"))
+
+        seat_group_idx = 1
+
+        # 32 Businnes seats
+        for row in 'ABCDEFGH':  
+            for num in range(1, 3):  
+                db.session.add(SeatMap(aircraft_type_id = i, seat_row=row, seat_number=num, seat_type="business", seat_group= seat_group_idx, seat_group_size=2))
+            seat_group_idx += 1
+            for num in range(3, 5):  
+                db.session.add(SeatMap(aircraft_type_id = i, seat_row=row, seat_number=num, seat_type="business", seat_group= seat_group_idx, seat_group_size=2))
+            seat_group_idx += 1
 
         # 90 Economy seats
         for row in 'ABCDEFGHIJKLMNO':  
-            for num in range(1, 7):  
-                db.session.add(SeatMap(aircraft_type_id = i, seat_row=row, seat_number=num, seat_type="economy"))
+            for num in range(1, 4):  
+                db.session.add(SeatMap(aircraft_type_id = i, seat_row=row, seat_number=num, seat_type="economy", seat_group= seat_group_idx, seat_group_size=3))
+            seat_group_idx += 1
+            for num in range(4, 7):  
+                db.session.add(SeatMap(aircraft_type_id = i, seat_row=row, seat_number=num, seat_type="economy", seat_group= seat_group_idx, seat_group_size=3))
+            seat_group_idx += 1
 
         db.session.commit()
 
@@ -63,25 +74,37 @@ def populate_seatmaps():
         
     for k in range(1, 17):  # 16 Crew seats
         db.session.add(SeatMap(aircraft_type_id = 3, seat_row="CR", seat_number=k, seat_type="crew"))
-
+    
+    seat_group_idx = 1
     # 40 Businnes seats
-    for row in 'ABCDE':  
-        for num in range(1, 9):  
-          db.session.add(SeatMap(aircraft_type_id = 3, seat_row=row, seat_number=num, seat_type="business"))
+    for row in 'ABCDEFGHIJ':  
+        for num in range(1, 3):  
+            db.session.add(SeatMap(aircraft_type_id = 3, seat_row=row, seat_number=num, seat_type="business", seat_group= seat_group_idx, seat_group_size=2))
+        seat_group_idx += 1
+        for num in range(3, 5):  
+            db.session.add(SeatMap(aircraft_type_id = 3, seat_row=row, seat_number=num, seat_type="business", seat_group= seat_group_idx, seat_group_size=2))
+        seat_group_idx += 1
 
     # 120 Economy seats
     for row in 'ABCDEFGHIJKLMNO':  
-        for num in range(1, 9):  
-            db.session.add(SeatMap(aircraft_type_id = 3, seat_row=row, seat_number=num, seat_type="economy"))
+        for num in range(1, 3):  
+            db.session.add(SeatMap(aircraft_type_id = 3, seat_row=row, seat_number=num, seat_type="economy", seat_group= seat_group_idx, seat_group_size=2))
+        seat_group_idx += 1
+        for num in range(3, 7):  
+            db.session.add(SeatMap(aircraft_type_id = 3, seat_row=row, seat_number=num, seat_type="economy", seat_group= seat_group_idx, seat_group_size=4))
+        seat_group_idx += 1
+        for num in range(7, 9):  
+            db.session.add(SeatMap(aircraft_type_id = 3, seat_row=row, seat_number=num, seat_type="economy", seat_group= seat_group_idx, seat_group_size= 2))
+
 
     db.session.commit()
 
 def populate_aircraft_types():
     db.session.add(AircraftType(
         name="Boeing 737",
-        seat_count=136,
+        seat_count=138,
         crew_limit=16,  
-        passenger_limit=120,  
+        passenger_limit=122,  
         standard_menu = [
             'Chicken Caesar Salad',  
             'Vegetarian Pasta Primavera',  
@@ -92,9 +115,9 @@ def populate_aircraft_types():
 
     db.session.add(AircraftType(
         name="Airbus A320",
-        seat_count=136,
+        seat_count=138,
         crew_limit=16,  
-        passenger_limit=120,  
+        passenger_limit=122,  
         standard_menu = [
             'Roasted Chicken with Vegetables',  
             'Vegan Lentil and Mushroom Stew',  
@@ -243,6 +266,7 @@ def populate_passengers(n):
     affiliated = set()  # Keep track of passengers who are already affiliated
     potential_affiliates = [p for p in passengers if p.age > 2 and p.passenger_id is not None]  # Exclude infants from affiliations
 
+    # Assign 20% of passengers to groups of 2-3 passengers
     while len(affiliated) < int(0.2 * n) and potential_affiliates:
         primary = random.choice(potential_affiliates)
         potential_affiliates.remove(primary)
