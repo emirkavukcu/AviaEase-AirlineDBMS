@@ -5,6 +5,7 @@ from models import db, Flight, AircraftType, Airport, Pilot, CabinCrew, Passenge
 import numpy as np
 import random
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm.attributes import flag_modified
 
 def calculate_distance(lat1, lon1, lat2, lon2):
     R = 6371.0
@@ -25,15 +26,15 @@ def scheduleIsAvailable(start_time, end_time, person_type, id):
     scheduled_flights = person_type.query.get(id).scheduled_flights
     for flight_number in scheduled_flights:
         flight = Flight.query.get(flight_number)
-        if flight.flight_time < end_time and flight.flight_time + timedelta(minutes = flight.duration) > start_time:
+        if flight.date_time < end_time and flight.date_time + timedelta(minutes = flight.duration) > start_time:
             return False
     return True
 
 def find_available_pilots(flight_id, pilot_type, num_needed):
-    flight_start_time = Flight.query.get(flight_id).flight_time
+    flight_start_time = Flight.query.get(flight_id).date_time
     flight_end_time = flight_start_time + timedelta(minutes = Flight.query.get(flight_id).duration)
     flight_distance = Flight.query.get(flight_id).distance
-    vehicle_type_id = Flight.query.get(flight_id).vehicle_type_id
+    vehicle_type_id = Flight.query.get(flight_id).aircraft_type_id
 
     unavailable_pilots = set()
     found_pilots = []
@@ -43,33 +44,36 @@ def find_available_pilots(flight_id, pilot_type, num_needed):
         ).order_by(db.func.random()).first()
         if pilot is None:
             return "Error"
-        if (pilot.allowed_range < flight_distance) or (not scheduleIsAvailable(flight_start_time, flight_end_time, "Pilot", "pilot_id")):
+        if (pilot.allowed_range < flight_distance) or (not scheduleIsAvailable(flight_start_time, flight_end_time, Pilot, pilot.pilot_id)):
             unavailable_pilots.add(pilot.pilot_id)
         else:
           found_pilots.append(pilot.pilot_id)
     return found_pilots
 
 def find_available_cabin_crew(flight_id, cabin_crew_type, num_needed):
-    flight_start_time = Flight.query.get(flight_id).flight_time
-    flight_end_time = flight_start_time + timedelta(minutes = Flight.query.get(flight_id).duration)
-    vehicle_type_id = Flight.query.get(flight_id).vehicle_type_id
+    flight_start_time = Flight.query.get(flight_id).date_time
+    flight_end_time = flight_start_time + timedelta(minutes=Flight.query.get(flight_id).duration)
+    vehicle_type_id = Flight.query.get(flight_id).aircraft_type_id
 
     unavailable_cabin_crew = set()
     found_cabin_crew = []
     while(len(found_cabin_crew) != num_needed):
-        cabin_crew = CabinCrew.query.filter(CabinCrew.attendant_type == cabin_crew_type, CabinCrew.vehicle_type_ids.contains(vehicle_type_id)
+        cabin_crew = CabinCrew.query.filter(
+            CabinCrew.attendant_type == cabin_crew_type,
+            CabinCrew.vehicle_type_ids.op('@>')([vehicle_type_id])
         ).filter(CabinCrew.attendant_id.notin_(unavailable_cabin_crew)
         ).order_by(db.func.random()).first()
+
         if cabin_crew is None:
             return "Error"
-        if (not scheduleIsAvailable(flight_start_time, flight_end_time, "CabinCrew", "attendant_id")):
+        if (not scheduleIsAvailable(flight_start_time, flight_end_time, CabinCrew, cabin_crew.attendant_id)):
             unavailable_cabin_crew.add(cabin_crew.attendant_id)
         else:
           found_cabin_crew.append(cabin_crew.attendant_id)
     return found_cabin_crew
 
 def find_available_passengers(flight_id, num_needed):
-    flight_start_time = Flight.query.get(flight_id).flight_time
+    flight_start_time = Flight.query.get(flight_id).date_time
     flight_end_time = flight_start_time + timedelta(minutes = Flight.query.get(flight_id).duration)
 
     unavailable_passengers = set()
@@ -79,7 +83,7 @@ def find_available_passengers(flight_id, num_needed):
         ).order_by(db.func.random()).first()
         if passenger is None:
             return "Error"
-        if (not scheduleIsAvailable(flight_start_time, flight_end_time, "Passenger", "passenger_id")):
+        if (not scheduleIsAvailable(flight_start_time, flight_end_time, Passenger, passenger.passenger_id)):
             unavailable_passengers.add(passenger.passenger_id)
         else:
           found_passengers.append(passenger.passenger_id)
@@ -122,7 +126,7 @@ def seat_plan_auto(flight_number, vehicle_type_id):
     
     trainee_pilots = find_available_pilots(flight_number, "trainee", trainee_pilot_num_needed)
     if trainee_pilots == "Error":
-        return "Not enough available trainee pilots"
+        trainee_pilots = []
     
     chief_cabin_crews = find_available_cabin_crew(flight_number, "chief", chief_cabin_crew_num_needed)
     if chief_cabin_crews == "Error":
@@ -132,21 +136,21 @@ def seat_plan_auto(flight_number, vehicle_type_id):
     if regular_cabin_crews == "Error":
         return "Not enough available regular cabin crew"
     
+    chefs = []
     if(chef_num_needed > 0):
         chefs = find_available_cabin_crew(flight_number, "chef", chef_num_needed)
-        if chefs == "Error":
-            return "Not enough available chefs"
         
     passengers = find_available_passengers(flight_number, passenger_num_needed)
     if passengers == "Error":
         return "Not enough available passengers"
 
-    assign_seats(senior_pilots, junior_pilots, trainee_pilots, chief_cabin_crews, regular_cabin_crews, chefs, passengers, flight_number, vehicle_type_id)    
-    
+    result = assign_seats(senior_pilots, junior_pilots, trainee_pilots, chief_cabin_crews, regular_cabin_crews, chefs, passengers, flight_number, vehicle_type_id)    
+    return result
+
 def assign_seats(senior_pilots, junior_pilots, trainee_pilots, chief_cabin_crews, regular_cabin_crews, chefs, passengers, flight_number, vehicle_type_id):
     
     if(vehicle_type_id == 1 or vehicle_type_id == 2):     
-        seniorPilotIdx = SeatMap.query.filter(SeatMap.aircraft_type_id == vehicle_type_id, SeatMap.seater_type == "pilot").first().id
+        seniorPilotIdx = SeatMap.query.filter(SeatMap.aircraft_type_id == vehicle_type_id, SeatMap.seat_type == "pilot").first().id
         juniorPilotIdx = seniorPilotIdx + 1
         traineePilotIdx = juniorPilotIdx + 1
         chiefCabinCrewIdx = traineePilotIdx + 2
@@ -154,7 +158,7 @@ def assign_seats(senior_pilots, junior_pilots, trainee_pilots, chief_cabin_crews
         chefIdx = regularCabinCrewIdx + 8
    
     elif(vehicle_type_id == 3):
-        seniorPilotIdx = SeatMap.query.filter(SeatMap.aircraft_type_id == vehicle_type_id, SeatMap.seater_type == "pilot").first().id
+        seniorPilotIdx = SeatMap.query.filter(SeatMap.aircraft_type_id == vehicle_type_id, SeatMap.seat_type == "pilot").first().id
         juniorPilotIdx = seniorPilotIdx + 2
         traineePilotIdx = juniorPilotIdx + 2
         chiefCabinCrewIdx = traineePilotIdx + 2
@@ -171,69 +175,84 @@ def assign_seats(senior_pilots, junior_pilots, trainee_pilots, chief_cabin_crews
         db.session.add(FlightSeatAssignment(flight_id=flight_number, seat_map_id= chiefCabinCrewIdx + i, seater_id=chief_cabin_crews[i], seater_type="ChiefCabinCrew"))
     for i in range(len(regular_cabin_crews)):
         db.session.add(FlightSeatAssignment(flight_id=flight_number, seat_map_id= regularCabinCrewIdx + i, seater_id=regular_cabin_crews[i], seater_type="RegularCabinCrew"))
-    if(len(chefs) > 0):
-        for i in range(len(chefs)):
-            db.session.add(FlightSeatAssignment(flight_id=flight_number, seat_map_id= chefIdx + i, seater_id=chefs[i], seater_type="ChefCabinCrew"))
+   
+    flight = Flight.query.get(flight_number)
+    if not flight:
+        return "Flight not found"
     
-    assign_seats_for_passengers(passengers, flight_number, vehicle_type_id)
+    if chefs:
+        menu_updated = False
+        for i, chef_id in enumerate(chefs):
+            db.session.add(FlightSeatAssignment(flight_id=flight_number, seat_map_id= chefIdx + i, seater_id=chef_id, seater_type="ChefCabinCrew"))
+            current_chef = CabinCrew.query.get(chef_id)
+            unique_dishes = [dish for dish in current_chef.dish_recipes if dish not in flight.flight_menu]
+            if unique_dishes:
+                random_dish = random.choice(unique_dishes)
+                flight.flight_menu.append(random_dish)  # Add unique dish to the flight menu  
+                menu_updated = True
+        if menu_updated:
+            flag_modified(flight, "flight_menu")
+                
+    result = assign_seats_for_passengers(passengers, flight_number, vehicle_type_id)
+    return result
 
-def assign_seats_for_passengers(passengers, flight_number, vehicle_type_id):
-  # Determine total passenger seats based on the aircraft type
-  total_seats = 122 if vehicle_type_id in [1, 2] else 160
+def assign_seats_for_passengers(passenger_ids, flight_number, vehicle_type_id):
+    # Determine total passenger seats based on the aircraft type
+    total_seats = 122 if vehicle_type_id in [1, 2] else 160
 
-  # Fetch seat maps for passenger seats
-  seat_maps = SeatMap.query.filter(
-    SeatMap.aircraft_type_id == vehicle_type_id,
-    SeatMap.seat_type.in_(['business', 'economy'])
-  ).order_by(SeatMap.id).all()
+    # Fetch seat maps for passenger seats
+    seat_maps = SeatMap.query.filter(
+        SeatMap.aircraft_type_id == vehicle_type_id,
+        SeatMap.seat_type.in_(['business', 'economy'])
+    ).order_by(SeatMap.id).all()
 
-  # Create a map of seat groups to their available seat ids
-  seat_groups = {}
-  for seat in seat_maps:
-    if seat.seat_group not in seat_groups:
-      seat_groups[seat.seat_group] = []
-    seat_groups[seat.seat_group].append(seat.id)
+    # Create a map of seat groups to their available seat ids
+    seat_groups = {}
+    for seat in seat_maps:
+        if seat.seat_group not in seat_groups:
+            seat_groups[seat.seat_group] = []
+        seat_groups[seat.seat_group].append(seat.id)
 
-  # Shuffle seat groups to randomize seat assignment
-  shuffled_seat_groups = list(seat_groups.items())
-  random.shuffle(shuffled_seat_groups)
+    # Shuffle seat groups to randomize seat assignment
+    shuffled_seat_groups = list(seat_groups.items())
+    random.shuffle(shuffled_seat_groups)
 
-  for group in shuffled_seat_groups:
-    random.shuffle(group[1])  # Shuffle the seat IDs within each group
+    # Fetch all passengers from the database based on IDs provided
+    passengers = {p.passenger_id: p for p in Passenger.query.filter(Passenger.passenger_id.in_(passenger_ids)).all()}
 
-  # Prepare to track assigned seats and passengers
-  assigned_seats = {}
-  assigned_passengers = set()
+    # Prepare to track assigned seats and passengers
+    assigned_seats = {}
+    assigned_passengers = set()
 
-  # Assign seats
-  for passenger in passengers:
-    # Skip if passenger has already been assigned a seat
-    if passenger.passenger_id in assigned_passengers:
-      continue
+    # Assign seats
+    for passenger_id in passenger_ids:
+        passenger = passengers.get(passenger_id)
+        if passenger_id in assigned_passengers:
+            continue
 
-    affiliated_ids = passenger.affiliated_passenger_ids or []
-    affiliated_passengers = [p for p in passengers if p.passenger_id in affiliated_ids]
+        affiliated_ids = passenger.affiliated_passenger_ids or []
+        affiliated_passengers = [passengers.get(aff_id) for aff_id in affiliated_ids if aff_id in passengers]
 
-    # Attempt to seat affiliated passengers together
-    for group, seats in shuffled_seat_groups:
-      # Check if the group can accommodate this passenger and all their affiliates
-      if all(p.passenger_id not in assigned_passengers for p in affiliated_passengers) and len(seats) >= len(affiliated_passengers) + 1:
-        # Assign seats to the main passenger and their affiliates
-        assigned_seats[passenger.passenger_id] = seats.pop(0)
-        assigned_passengers.add(passenger.passenger_id)
-        for affiliated_passenger in affiliated_passengers:
-          assigned_seats[affiliated_passenger.passenger_id] = seats.pop(0)
-          assigned_passengers.add(affiliated_passenger.passenger_id)
-        break
-    else:
-      # If no suitable group found, assign the next available seat
-      for group, seats in shuffled_seat_groups:
-        if seats and passenger.passenger_id not in assigned_passengers:
-          assigned_seats[passenger.passenger_id] = seats.pop(0)
-          assigned_passengers.add(passenger.passenger_id)
-          break
+        # Attempt to seat affiliated passengers together
+        for group, seats in shuffled_seat_groups:
+            if all(ap_id not in assigned_passengers for ap_id in affiliated_ids) and len(seats) >= len(affiliated_passengers) + 1:
+                # Assign seats to the main passenger and their affiliates
+                assigned_seats[passenger_id] = seats.pop(0)
+                assigned_passengers.add(passenger_id)
+                for affiliated_passenger in affiliated_passengers:
+                    if affiliated_passenger:  # Check if the affiliated passenger exists in the fetched data
+                        assigned_seats[affiliated_passenger.passenger_id] = seats.pop(0)
+                        assigned_passengers.add(affiliated_passenger.passenger_id)
+                break
+        else:
+            # If no suitable group found, assign the next available seat
+            for group, seats in shuffled_seat_groups:
+                if seats and passenger_id not in assigned_passengers:
+                    assigned_seats[passenger_id] = seats.pop(0)
+                    assigned_passengers.add(passenger_id)
+                    break
 
-  # Store the seat assignments in the database
+    # Store the seat assignments in the database
     try:
         for passenger_id, seat_id in assigned_seats.items():
             db.session.add(FlightSeatAssignment(
@@ -243,11 +262,10 @@ def assign_seats_for_passengers(passengers, flight_number, vehicle_type_id):
                 seater_type='Passenger'
             ))
         db.session.commit()
-        return True
+        return "Seats assigned successfully"
     except SQLAlchemyError as e:
         db.session.rollback()
-        print(f"Database error during seat assignment: {str(e)}")
-        return False
+        return f"Database error during seat assignment: {str(e)}"
 
 
 

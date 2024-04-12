@@ -44,7 +44,7 @@ def index():
 @app.route('/api/create_flight', methods=['POST'])
 def create_flight():
     data = request.get_json()
-    required_fields = ['flight_time', 'source', 'destination', 'vehicle_type_id']
+    required_fields = ['flight_time', 'source', 'destination', 'vehicle_type_id', 'create_roster']
     missing_fields = [field for field in required_fields if field not in data]
     if missing_fields:
         return jsonify({'error': 'Missing fields', 'missing': missing_fields}), 400
@@ -60,8 +60,13 @@ def create_flight():
             source_airport.longitude, source_airport.latitude,
             destination_airport.longitude, destination_airport.latitude
         )
-        # Calculate duration assuming a speed of 15 km/minute
-        duration = distance / 15
+        duration = distance / 15  # Calculate duration assuming a speed of 15 km/minute
+
+        # Retrieve the flight menu from the aircraft type
+        aircraft_type = AircraftType.query.get(data['vehicle_type_id'])
+        if not aircraft_type:
+            return jsonify({"error": "Invalid vehicle type ID"}), 400
+
         flight = Flight(
             airline_code="AE",  
             date_time=data['flight_time'],
@@ -69,19 +74,50 @@ def create_flight():
             distance=distance, 
             source_airport=source_airport.airport_code,
             destination_airport=destination_airport.airport_code,
-            aircraft_type_id=data['vehicle_type_id']
+            aircraft_type_id=data['vehicle_type_id'],
+            flight_menu=aircraft_type.standard_menu  # Use the standard menu from the aircraft type
         )
         db.session.add(flight)
         db.session.commit()
-        seat_plan_auto(flight.flight_number, data['vehicle_type_id'])
-        return jsonify({"message": "Flight created successfully", "flight_id": flight.flight_number}), 201
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
 
-def seat_plan_logic(flight_id, vehicle_type_id):
-    # Example logic to create seat plans
-    # You'll need to implement this based on your specific requirements
-    pass
+        if data['create_roster'] == "No":
+            return jsonify({"message": "Flight succesfully created", "flight_id": flight.flight_number}), 201
+        
+        elif data['create_roster'] == "Yes":
+          returnedMessage = seat_plan_auto(flight.flight_number, data['vehicle_type_id'])
+          if returnedMessage != "Seats successfully assigned":
+              return jsonify({"message": returnedMessage}), 500
+          else:
+            message = "Flight created and roster successfully assigned"
+            return jsonify({"message": message, "flight_id": flight.flight_number}), 201
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
+    
+@app.route('/api/create_roster_auto', methods=['POST'])
+def create_roster_auto():
+    data = request.get_json()
+    required_fields = ['flight_number']
+    missing_fields = [field for field in required_fields if field not in data]
+    if missing_fields:
+        return jsonify({'error': 'Missing fields', 'missing': missing_fields}), 400
+    
+    flight_number = data['flight_number']
+    if FlightSeatAssignment.query.filter_by(flight_id=flight_number).first():
+      return jsonify({"message": "A roster for this flight already created"}), 400
+
+    flight = Flight.query.filter_by(flight_number=flight_number).first()
+    if not flight:
+      return jsonify({"error": "Invalid flight number"}), 400
+
+    vehicle_type_id = flight.aircraft_type_id
+
+    returnedMessage = seat_plan_auto(flight_number, vehicle_type_id)
+    if returnedMessage != "Roster successfully assigned":
+      return jsonify({"message": returnedMessage}), 500
+    else:
+      return jsonify({"message": returnedMessage}), 201
 
 if __name__ == '__main__':
     app.run(debug=True)
