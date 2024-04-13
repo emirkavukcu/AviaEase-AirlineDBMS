@@ -1,10 +1,11 @@
-from models import db
-from models import Flight, AircraftType, SeatMap, Airport, Pilot, CabinCrew, Passenger, FlightSeatAssignment
+from models import db, Flight, AircraftType, SeatMap, Airport, Pilot, CabinCrew, Passenger, FlightSeatAssignment
 from faker import Faker
 import random
 import numpy as np
 import airportsdata
 from sqlalchemy.orm.attributes import flag_modified
+from services import seat_plan_auto, calculate_distance
+from datetime import datetime, timedelta
 
 nationality_locale_mapping = {
     'Chinese': ('zh_CN', 'Mandarin'),
@@ -307,3 +308,55 @@ def populate_airports():
             db.session.add(new_airport)
     
     db.session.commit()
+
+def populate_flights_with_rosters(start_date, end_date, num_flights):
+    all_airports = Airport.query.all()
+    if len(all_airports) < 2:
+        return "Not enough airports to create flights."
+
+    for _ in range(num_flights):
+        source_airport = random.choice(all_airports)
+        destination_airport = random.choice([airport for airport in all_airports if airport != source_airport])
+        vehicle_type_id = random.randint(1, 3)  # Assuming these IDs correspond to different aircraft types
+
+        # Calculate distance and duration
+        distance = calculate_distance(
+            source_airport.longitude, source_airport.latitude,
+            destination_airport.longitude, destination_airport.latitude
+        )
+        duration = distance / 15
+
+        # Retrieve the flight menu from the aircraft type
+        aircraft_type = AircraftType.query.get(vehicle_type_id)
+        if not aircraft_type:
+            return f"Invalid vehicle type ID {vehicle_type_id}"
+
+        # Generate a random datetime between the start_date and end_date
+        time_between_dates = end_date - start_date
+        random_seconds = random.randrange(time_between_dates.total_seconds())
+        flight_date = start_date + timedelta(seconds=random_seconds)
+        flight_date = flight_date.replace(hour=random.randint(0, 23), minute=0, second=0)
+
+        # Create the flight
+        flight = Flight(
+            airline_code="AE",
+            date_time=flight_date,
+            duration=int(duration),
+            distance=int(distance),
+            source_airport=source_airport.airport_code,
+            destination_airport=destination_airport.airport_code,
+            aircraft_type_id=vehicle_type_id,
+            flight_menu=aircraft_type.standard_menu.copy()
+        )
+        db.session.add(flight)
+        db.session.flush()  # Flush to get the flight_number generated
+        
+        # Auto generate seat plan for this flight
+        result = seat_plan_auto(flight.flight_number, vehicle_type_id)
+        if result != "Seats assigned successfully":
+            db.session.rollback()  # Rollback if seat assignment fails
+            continue
+
+        db.session.commit()  # Commit after each flight and its seat assignments are successfully processed
+
+    return "Flights with rosters populated successfully."
