@@ -66,7 +66,7 @@ def get_pilots():
         'total': paginated_pilots.total,
         'pages': paginated_pilots.pages,
         'current_page': page
-    })
+    }), 200
 
 @pilots.route('/create_pilot', methods=['POST'])
 def create_pilot():

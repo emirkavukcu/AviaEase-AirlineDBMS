@@ -55,7 +55,7 @@ def get_passengers():
         'pages': paginated_passengers.pages,
         'current_page': paginated_passengers.page
     }
-    return jsonify(response)
+    return jsonify(response), 200
 
 # Create a new passenger
 @passengers.route('/create_passenger', methods=['POST'])
