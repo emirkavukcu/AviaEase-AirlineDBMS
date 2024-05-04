@@ -6,4 +6,4 @@ SQLAlchemy
 Flask-SQLAlchemy
 Faker
 airportsdata
-psycopg2
+psycopg2-binary
