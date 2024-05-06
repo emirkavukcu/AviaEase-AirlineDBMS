@@ -1,0 +1,107 @@
+// Copy-paste to below website to render:
+// https://dbdiagram.io
+
+Table aircraft_type {
+  type_id integer [primary key]
+  name varchar[255]
+  seat_count integer
+  crew_limit integer
+  passenger_limit integer
+  standart_menu array
+}
+
+Table airport {
+  airport_code char[3] [primary key]
+  name varchar[255]
+  city varchar[255]
+  country varchar[255]
+  latitude decimal[9,6]
+  longitude decimal[9,6]
+}
+
+Table cabin_crew {
+  attendent_id integer [primary key]
+  name varchar[255]
+  age integer
+  gender varchar[50]
+  nationality varhar[255]
+  known_languages array
+  attendent_type varchar[50]
+  vehicle_type_ids array
+  dish_recipies array
+  scheduled_flights array
+}
+
+Table flight {
+  flight_number integer [primary key]
+  airline_code char[2]
+  date_time datetime
+  duration integer
+  distance integer
+  source_airport integer
+  destination_airport integer
+  aircraft_type_id integer
+  flight_menu array
+}
+
+Table flight_seat_assignment {
+  flight_id integer
+  seat_map_id integer
+  seater_type varchar[50]
+  seater_id integer
+}
+
+Table passenger {
+  passenger_id integer [primary key]
+  name varchar[255]
+  age integer
+  gender varchar[50]
+  nationality varchar[255]
+  parent_id integer
+  affiliated_passengers_ids array
+  schedued_flights array
+}
+
+Table pilot {
+  pilot_id integer [primary key]
+  name varchar[255]
+  age integer
+  gender integer
+  nationality varchar[255]
+  known_languages array
+  vehicle_type_id integer
+  allowed_range integer
+  seniorty_level varchar[255]
+  scheduled_flights array
+}
+
+Table seat_map {
+  id integer [primary key]
+  aircraft_type_id integer
+  seat_row char[2]
+  seat_number char[3]
+  seat_type char[2]
+  seat_group integer
+  seat_group_size integer
+}
+
+Ref: flight.source_airport < airport.airport_code
+Ref: flight.destination_airport < airport.airport_code
+Ref: flight.aircraft_type_id < aircraft_type.type_id
+
+Ref: pilot.vehicle_type_id < aircraft_type.type_id
+Ref: pilot.scheduled_flights <> flight.flight_number
+
+Ref: cabin_crew.vehicle_type_ids <> flight.aircraft_type_id
+Ref: cabin_crew.scheduled_flights <> flight.flight_number
+
+Ref: passenger.parent_id < passenger.passenger_id
+Ref: passenger.affiliated_passengers_ids <> passenger.passenger_id
+Ref: passenger.schedued_flights <> flight.flight_number
+
+Ref: seat_map.aircraft_type_id < aircraft_type.type_id
+
+Ref: flight_seat_assignment.seat_map_id < seat_map.id
+Ref: flight_seat_assignment.seater_id < pilot.pilot_id
+Ref: flight_seat_assignment.seater_id < cabin_crew.attendent_id
+Ref: flight_seat_assignment.seater_id < passenger.passenger_id
