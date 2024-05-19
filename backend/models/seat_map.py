@@ -2,6 +2,8 @@ from .base import db
 from sqlalchemy import Sequence
 
 seat_map_seq = Sequence('seat_map_seq', start=1, increment=1)
+
+
 class SeatMap(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     aircraft_type_id = db.Column(db.Integer, db.ForeignKey('aircraft_type.type_id'), nullable=False)
