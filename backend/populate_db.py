@@ -156,7 +156,7 @@ def populate_pilots(n):
         # Generate age using a normal distribution centered at 40
         age = max(22, int(np.random.normal(40, 10)))
         known_languages = ['English']
-        if(nationality != 'American'):
+        if(nationality not in ['American', 'British', 'Nigerian']):
             known_languages.append(nationality_locale_mapping[nationality][1])
         vehicle_type_id = random.randint(1, 3)
         

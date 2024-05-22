@@ -34,6 +34,11 @@ def get_passengers():
     if nationality:
         query = query.filter(Passenger.nationality.ilike(f'%{nationality}%'))
 
+    query = query.order_by(Passenger.passenger_id)
+
+    # Sort by passenger_id
+    query = query.order_by(Passenger.passenger_id)
+
     # Execute the query with pagination
     paginated_passengers = query.paginate(page=page, per_page=per_page, error_out=False)
 

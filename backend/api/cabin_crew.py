@@ -40,21 +40,25 @@ def get_crew_members():
     if vehicle_type_ids:
         query = query.filter(CabinCrew.vehicle_type_ids.op('&&')(db.cast(vehicle_type_ids, db.ARRAY(db.Integer))))
 
+    # Sort by attendant_id
+    query = query.order_by(CabinCrew.attendant_id)
+
     # Execute the query with pagination
     paginated_crew = query.paginate(page=page, per_page=per_page, error_out=False)
 
     # Serialize the result
     crew_members = [{
-        'attendant_id': crew.attendant_id,
-        'name': crew.name,
-        'age': crew.age,
-        'gender': crew.gender,
-        'nationality': crew.nationality,
-        'known_languages': crew.known_languages,
-        'attendant_type': crew.attendant_type,
-        'vehicle_type_ids': crew.vehicle_type_ids,
-        'dish_recipes': crew.dish_recipes,
-        'scheduled_flights': crew.scheduled_flights
+      'attendant_id': crew.attendant_id,
+      'name': crew.name,
+      'age': crew.age,
+      'gender': crew.gender,
+      'nationality': crew.nationality,
+      'known_languages': crew.known_languages,
+      'attendant_type': crew.attendant_type,
+      'vehicle_type_ids': crew.vehicle_type_ids,
+      'dish_recipes': crew.dish_recipes,
+      'scheduled_flights': crew.scheduled_flights,
+      'aircraft_types': ['Boeing 737' if id == 1 else 'Airbus A320' if id == 2 else 'Boeing 777' for id in crew.vehicle_type_ids]
     } for crew in paginated_crew.items]
 
     response = {
