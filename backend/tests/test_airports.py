@@ -47,14 +47,14 @@ def populate_db():
     db.session.commit()
 
 def test_get_airport_codes(client, init_database):
-    response = client.get('/api/airport_codes')
+    response = client.get('/airport_codes')
     data = response.get_json()
     assert response.status_code == 200
     assert 'AAA' in data
     assert 'ZZZ' in data
 
 def test_get_airport_details(client, init_database):
-    response = client.get('/api/airports')
+    response = client.get('/airports')
     data = response.get_json()
     assert response.status_code == 200
     assert len(data) == 2
