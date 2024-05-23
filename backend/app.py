@@ -45,10 +45,6 @@ def create_app(config_class=Config):
 
 app = create_app()
 
-@app.route('/')
-def index():
-    return 'Hello, World!'
-
 if __name__ == '__main__':
     print(app.url_map)
     app.run(debug=True)
