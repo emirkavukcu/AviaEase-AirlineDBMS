@@ -1,0 +1,77 @@
+import json
+import pytest
+from app import create_app, db
+from models import Airport, AircraftType, Flight
+
+@pytest.fixture
+def client():
+    app = create_app()
+    app.config['TESTING'] = True
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
+    with app.test_client() as client:
+        with app.app_context():
+            db.create_all()
+            yield client
+        db.session.remove()
+        db.drop_all()
+
+def test_create_flight(client):
+    source_airport = Airport(airport_code='JFK', city='New York', country='USA', latitude=40.6413, longitude=-73.7781)
+    destination_airport = Airport(airport_code='LAX', city='Los Angeles', country='USA', latitude=33.9416, longitude=-118.4085)
+    aircraft_type = AircraftType(id=1, standard_menu='Standard')
+
+    db.session.add_all([source_airport, destination_airport, aircraft_type])
+    db.session.commit()
+
+    flight_data = {
+        "flight_time": "2024-06-01T12:00:00",
+        "source": "JFK",
+        "destination": "LAX",
+        "vehicle_type_id": 1,
+        "create_roster": "No"
+    }
+
+    response = client.post('/create_flight', data=json.dumps(flight_data), content_type='application/json')
+    assert response.status_code == 201
+    assert response.json['message'] == 'Flight successfully created'
+
+def test_create_flight_invalid_airports(client):
+    aircraft_type = AircraftType(id=1, standard_menu='Standard')
+    db.session.add(aircraft_type)
+    db.session.commit()
+
+    flight_data = {
+        "flight_time": "2024-06-01T12:00:00",
+        "source": "INVALID",
+        "destination": "INVALID",
+        "vehicle_type_id": 1,
+        "create_roster": "No"
+    }
+
+    response = client.post('/create_flight', data=json.dumps(flight_data), content_type='application/json')
+    assert response.status_code == 400
+    assert response.json['error'] == "Invalid source or destination airport code"
+
+def test_get_flights(client):
+    source_airport = Airport(airport_code='JFK', city='New York', country='USA', latitude=40.6413, longitude=-73.7781)
+    destination_airport = Airport(airport_code='LAX', city='Los Angeles', country='USA', latitude=33.9416, longitude=-118.4085)
+    aircraft_type = AircraftType(id=1, standard_menu='Standard')
+    flight = Flight(
+        airline_code="AE",
+        date_time="2024-06-01T12:00:00",
+        duration=300,
+        distance=4000,
+        source_airport="JFK",
+        destination_airport="LAX",
+        aircraft_type_id=1,
+        flight_menu="Standard"
+    )
+
+    db.session.add_all([source_airport, destination_airport, aircraft_type, flight])
+    db.session.commit()
+
+    response = client.get('/flights')
+    assert response.status_code == 200
+    assert 'flights' in response.json
+    assert len(response.json['flights']) == 1
+    assert response.json['flights'][0]['flight_number'] == flight.flight_number
