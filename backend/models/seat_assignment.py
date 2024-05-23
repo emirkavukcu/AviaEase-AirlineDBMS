@@ -11,4 +11,4 @@ class FlightSeatAssignment(db.Model):
     seat_map = db.relationship('SeatMap', backref=db.backref('assignments', lazy=True))
 
     def __repr__(self):
-        return f'<PassengerFlightInfo Passenger ID: {self.passenger_id}, Flight ID: {self.flight_id}, Seat: {self.seat_row}{self.seat_number}>'
+        return f'<Seater ID: {self.seater_id}, Flight ID: {self.flight_id}>'

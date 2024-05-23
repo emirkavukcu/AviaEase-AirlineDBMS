@@ -1,8 +1,9 @@
 from flask import Blueprint, jsonify, request
 from models import db, Airport, Flight, AircraftType
 from services import calculate_distance, seat_plan_auto
-from datetime import datetime
+from datetime import datetime, timedelta
 from sqlalchemy import cast, String 
+from sqlalchemy.orm import aliased
 
 flights = Blueprint('flights', __name__)
 
@@ -59,6 +60,7 @@ def create_flight():
         
     except Exception as e:
         db.session.rollback()
+        print(str(e))
         return jsonify({"error": str(e)}), 500
     
 # Endpoint to get flights with filtering and pagination 
@@ -87,7 +89,6 @@ def get_flights():
     # Apply filters
     if flight_number_prefix:
         query = query.filter(cast(Flight.flight_number, String).like(f"{flight_number_prefix}%"))
-        print(query)
     if min_date_time:
         query = query.filter(Flight.date_time >= datetime.fromisoformat(min_date_time))
     if max_date_time:
@@ -106,19 +107,32 @@ def get_flights():
         query = query.filter(Flight.destination_airport.ilike(destination_airport))
 
     # Join with Airport to filter by city or country
-    if source_city or source_country:
-        query = query.join(Airport, Flight.source_airport == Airport.airport_code)
-        if source_city:
-            query = query.filter(Airport.city.ilike(source_city))
-        if source_country:
-            query = query.filter(Airport.country.ilike(source_country))
+    source_airport_alias = aliased(Airport)
+    destination_airport_alias = aliased(Airport)
+    
+    query = query.join(source_airport_alias, Flight.source_airport == source_airport_alias.airport_code)
+    query = query.join(destination_airport_alias, Flight.destination_airport == destination_airport_alias.airport_code)
 
-    if destination_city or destination_country:
-        query = query.join(Airport, Flight.destination_airport == Airport.airport_code)
-        if destination_city:
-            query = query.filter(Airport.city.ilike(destination_city))
-        if destination_country:
-            query = query.filter(Airport.country.ilike(destination_country))
+    if source_city:
+        query = query.filter(source_airport_alias.city.ilike(source_city))
+    if source_country:
+        query = query.filter(source_airport_alias.country.ilike(source_country))
+
+    if destination_city:
+        query = query.filter(destination_airport_alias.city.ilike(destination_city))
+    if destination_country:
+        query = query.filter(destination_airport_alias.country.ilike(destination_country))
+
+    # Select the fields you want to include in the result
+    query = query.add_columns(
+        source_airport_alias.country.label('source_country'),
+        source_airport_alias.city.label('source_city'),
+        destination_airport_alias.country.label('destination_country'),
+        destination_airport_alias.city.label('destination_city')
+    )
+
+    # Sort by flight_number
+    query = query.order_by(Flight.flight_number)
 
     # Pagination
     pagination = query.paginate(page=page, per_page=per_page, error_out=False)
@@ -126,13 +140,26 @@ def get_flights():
 
     # Serialize flights
     flights_data = [{
-        "flight_number": flight.flight_number,
-        "airline_code": flight.airline_code,
-        "date_time": flight.date_time.isoformat(),
-        "duration": flight.duration,
-        "distance": flight.distance,
-        "source_airport": flight.source_airport,
-        "destination_airport": flight.destination_airport
+      "flight_number": flight.Flight.flight_number,
+      "airline_code": flight.Flight.airline_code,
+      "date_time": flight.Flight.date_time.isoformat(),
+      "duration": flight.Flight.duration,
+      "distance": flight.Flight.distance,
+      "source_airport": flight.Flight.source_airport,
+      "destination_airport": flight.Flight.destination_airport,
+      "aircraft_type_id": flight.Flight.aircraft_type_id,
+      "aircraft_type": "Boeing 737" if flight.Flight.aircraft_type_id == 1 
+               else "Airbus A320" if flight.Flight.aircraft_type_id == 2 
+               else "Boeing 777" if flight.Flight.aircraft_type_id == 3 
+               else "Unknown",
+      "status": "passed" if flight.Flight.date_time + timedelta(minutes=flight.Flight.duration) < datetime.now() 
+           else "active" if flight.Flight.date_time <= datetime.now() 
+           else "pending",
+      "source_country": flight.source_country,
+      "source_city": flight.source_city,
+      "destination_country": flight.destination_country,
+      "destination_city": flight.destination_city,
+      "flight_menu": flight.Flight.flight_menu
     } for flight in flights]
 
     # Response with pagination metadata
@@ -144,3 +171,6 @@ def get_flights():
     }
 
     return jsonify(response), 200
+
+
+

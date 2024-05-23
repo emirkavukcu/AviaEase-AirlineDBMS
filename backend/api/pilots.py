@@ -46,19 +46,24 @@ def get_pilots():
     if seniority_level:
         query = query.filter(Pilot.seniority_level == seniority_level)
     
+
+    # Sort by pilot_id
+    query = query.order_by(Pilot.pilot_id)
+    
     # Pagination
     paginated_pilots = query.paginate(page=page, per_page=per_page, error_out=False)
     pilots = [{
-        'pilot_id': pilot.pilot_id,
-        'name': pilot.name,
-        'age': pilot.age,
-        'gender': pilot.gender,
-        'nationality': pilot.nationality,
-        'vehicle_type_id': pilot.vehicle_type_id,
-        'allowed_range': pilot.allowed_range,
-        'seniority_level': pilot.seniority_level,
-        'known_languages': pilot.known_languages,
-        'scheduled_flights': pilot.scheduled_flights
+      'pilot_id': pilot.pilot_id,
+      'name': pilot.name,
+      'age': pilot.age,
+      'gender': pilot.gender,
+      'nationality': pilot.nationality,
+      'vehicle_type_id': pilot.vehicle_type_id,
+      'aircraft_type': 'Boeing 737' if pilot.vehicle_type_id == 1 else 'Airbus A320' if pilot.vehicle_type_id == 2 else 'Boeing 777',
+      'allowed_range': pilot.allowed_range,
+      'seniority_level': pilot.seniority_level,
+      'known_languages': pilot.known_languages,
+      'scheduled_flights': pilot.scheduled_flights
     } for pilot in paginated_pilots.items]
     
     return jsonify({
@@ -66,7 +71,7 @@ def get_pilots():
         'total': paginated_pilots.total,
         'pages': paginated_pilots.pages,
         'current_page': page
-    })
+    }), 200
 
 @pilots.route('/create_pilot', methods=['POST'])
 def create_pilot():
