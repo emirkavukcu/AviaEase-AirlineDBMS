@@ -7,4 +7,8 @@ Flask-SQLAlchemy
 Faker
 airportsdata
 psycopg2-binary
-pytest
+flask-cors
+pycountry
+pytest 
+flask-testing
+locust
