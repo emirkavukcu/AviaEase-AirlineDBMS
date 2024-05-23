@@ -7,3 +7,4 @@ Flask-SQLAlchemy
 Faker
 airportsdata
 psycopg2-binary
+pytest
