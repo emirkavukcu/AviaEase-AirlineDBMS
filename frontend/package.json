@@ -9,14 +9,16 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@fullcalendar/daygrid": "^6.1.13",
+    "@fullcalendar/react": "^6.1.13",
     "apexcharts": "^3.45.2",
     "flatpickr": "^4.6.13",
     "install": "^0.13.0",
     "jsvectormap": "^1.5.3",
     "next": "^14.2.3",
-    "react": "^18",
+    "react": "^18.3.1",
     "react-apexcharts": "^1.4.1",
-    "react-dom": "^18",
+    "react-dom": "^18.3.1",
     "react-router-dom": "^6.23.1",
     "react-select": "^5.8.0",
     "react-window": "^1.8.10"
