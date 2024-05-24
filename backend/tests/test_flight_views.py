@@ -1,7 +1,8 @@
 import pytest
 from app import create_app, db
-from models import Flight, Flight, Passenger, Pilot, CabinCrew, SeatMap, Airport, AircraftType
+from models import Flight, FlightSeatAssignment, Passenger, Pilot, CabinCrew, SeatMap, Airport, AircraftType
 from config import TestConfig
+import json
 from datetime import datetime
 
 
@@ -68,10 +69,10 @@ def populate_db():
                         aircraft_type_id=1, flight_menu=['Food', 'Drink'])
         db.session.add(flight)
 
-        assignment1 = Flight(flight_id=flight.flight_number, seater_id=pilot.pilot_id,
-                             seater_type='SeniorPilot', seat_map_id=seat_map1.id)
-        assignment2 = Flight(flight_id=flight.flight_number, seater_id=cabin_crew.attendant_id,
-                             seater_type='ChiefCabinCrew', seat_map_id=seat_map2.id)
+        assignment1 = FlightSeatAssignment(flight_id=flight.flight_number, seater_id=pilot.pilot_id,
+                                           seater_type='SeniorPilot', seat_map_id=seat_map1.id)
+        assignment2 = FlightSeatAssignment(flight_id=flight.flight_number, seater_id=cabin_crew.attendant_id,
+                                           seater_type='ChiefCabinCrew', seat_map_id=seat_map2.id)
         db.session.add(assignment1)
         db.session.add(assignment2)
         db.session.commit()  # Ensure data is committed to the database
