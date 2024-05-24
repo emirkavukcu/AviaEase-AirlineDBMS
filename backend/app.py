@@ -1,9 +1,10 @@
-from flask import Flask
+from flask import Flask, jsonify
 from config import Config, TestConfig
 from models import db
 from populate_db import *
 from api import register_blueprints  
 from flask_cors import CORS
+
 
 def create_app(config_class=Config):
     app = Flask(__name__)
@@ -44,6 +45,11 @@ def create_app(config_class=Config):
     return app
 
 app = create_app()
+
+
+@app.route('/')
+def index():
+    return jsonify({"message": "Welcome to the Airline DBMS API"}), 200
 
 if __name__ == '__main__':
     print(app.url_map)
