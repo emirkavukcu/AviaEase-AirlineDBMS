@@ -60,3 +60,54 @@ def test_get_airport_details(client, init_database):
     assert len(data) == 2
     assert any(airport['airport_code'] == 'AAA' and airport['city'] == 'Sample City 1' and airport['country'] == 'AA' for airport in data)
     assert any(airport['airport_code'] == 'ZZZ' and airport['city'] == 'Sample City 2' and airport['country'] == 'ZZ' for airport in data)
+
+def test_get_airport_codes_empty_db(client):
+    response = client.get('/airport_codes')
+    data = response.get_json()
+    assert response.status_code == 200
+    assert data == []
+
+def test_get_airport_details_empty_db(client):
+    response = client.get('/airports')
+    data = response.get_json()
+    assert response.status_code == 200
+    assert data == []
+
+def test_get_airport_details_country_code(client, init_database):
+    response = client.get('/airports')
+    data = response.get_json()
+    assert response.status_code == 200
+    assert any(airport['country'] == 'AA' for airport in data)
+
+def test_get_airport_details_country_name(client, init_database):
+    response = client.get('/airports')
+    data = response.get_json()
+    assert response.status_code == 200
+    assert any(airport['country'] == 'AA' for airport in data)
+
+def test_get_airport_codes_specific_airport(client, init_database):
+    response = client.get('/airport_codes')
+    data = response.get_json()
+    assert response.status_code == 200
+    assert 'AAA' in data
+
+def test_get_airport_details_specific_airport(client, init_database):
+    response = client.get('/airports')
+    data = response.get_json()
+    assert response.status_code == 200
+    assert any(airport['airport_code'] == 'AAA' for airport in data)
+
+def test_get_airport_codes_multiple_airports(client, init_database):
+    response = client.get('/airport_codes')
+    data = response.get_json()
+    assert response.status_code == 200
+    assert 'AAA' in data
+    assert 'ZZZ' in data
+
+def test_get_airport_details_multiple_airports(client, init_database):
+    response = client.get('/airports')
+    data = response.get_json()
+    assert response.status_code == 200
+    assert len(data) == 2
+    assert any(airport['airport_code'] == 'AAA' for airport in data)
+    assert any(airport['airport_code'] == 'ZZZ' for airport in data)
