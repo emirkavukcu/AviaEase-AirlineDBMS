@@ -48417,20 +48417,21 @@ const ChartThree: React.FC = () => {
         `https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/${city}?include=fcst%2Cobs%2Chistfcst%2Cstats%2Cdays%2Chours%2Ccurrent%2Calerts&key=XMJF54BDVDFY3YXBQ84UE6P6A&options=beta&contentType=json`
       );
       const forecast = response.data.days;
-      const visibilityData = forecast.map((day: any) => day.visibility); // Extract visibility distance
+      const windSpeedData = forecast.map((day: any) => day.windspeed); // Extract wind speed
       const days = forecast.map((day: any) => {
         const date = new Date(day.datetime);
         return `${date.toLocaleString("en", { month: "short" })} ${date.getDate()}`;
       });
-      setState({ series: visibilityData, days });
+      setState({ series: windSpeedData, days });
     } catch (error) {
       console.error("Error fetching weather data:", error);
     }
   };
 
   const handleCountryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setSelectedCountry(e.target.value);
-    setSelectedCity(countriesAndCities[e.target.value][0]);
+    const selectedCountry = e.target.value;
+    setSelectedCountry(selectedCountry);
+    setSelectedCity(countriesAndCities[selectedCountry][0]);
   };
 
   const handleCityChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -48441,13 +48442,14 @@ const ChartThree: React.FC = () => {
     <div className="col-span-12 rounded-sm border border-stroke bg-white px-5 pb-5 pt-7.5 shadow-default dark:border-strokedark dark:bg-boxdark sm:px-7.5 xl:col-span-5">
       <div className="mb-3 justify-between gap-4 sm:flex">
         <div>
-          <h5 className="text-xl font-semibold text-black dark:text-white">
-            Visibility Distance (15 Days)
+          <h5 className="text-lg font-semibold text-black dark:text-white">
+            Weekly Wind Speed
           </h5>
         </div>
         <div className="flex">
           <select
-            className="px-2 py-1 border rounded text-sm mr-2 mb-2" // Updated: smaller text size and increased spacing
+            className="px-1 py-1 border rounded text-xs mr-2 mb-2"
+            style={{ width: '100px' }}
             value={selectedCountry}
             onChange={handleCountryChange}
           >
@@ -48458,7 +48460,8 @@ const ChartThree: React.FC = () => {
             ))}
           </select>
           <select
-            className="px-2 py-1 border rounded text-sm mb-2" // Updated: smaller text size and increased spacing
+            className="px-1 py-1 border rounded text-xs mb-2"
+            style={{ width: '100px' }}
             value={selectedCity}
             onChange={handleCityChange}
           >
@@ -48480,28 +48483,28 @@ const ChartThree: React.FC = () => {
                 categories: state.days,
               },
             }}
-            series={[{ name: "Visibility Distance", data: state.series }]}
+            series={[{ name: "Wind Speed", data: state.series }]}
             type="line"
           />
         </div>
       </div>
 
       <div className="-mx-8 flex flex-wrap items-center justify-center gap-y-3">
-        {state.series.map((visibility, index) => (
-                    <div className="w-full px-8 sm:w-1/2" key={index}>
-                    <div className="flex w-full items-center">
-                      <p className="flex w-full justify-between text-sm font-medium text-black dark:text-white">
-                        <span style={{ width: "60px" }}>
-                          {state.days[index]}
-                        </span>
-                        <span>{visibility} km</span> {/* Adjusted for visibility in kilometers */}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
+        {state.series.map((windSpeed, index) => (
+          <div className="w-full px-8 sm:w-1/2" key={index}>
+            <div className="flex w-full items-center">
+              <p className="flex w-full justify-between text-sm font-medium text-black dark:text-white">
+                <span style={{ width: "60px" }}>
+                  {state.days[index]}
+                </span>
+                <span>{windSpeed} m/s</span>
+              </p>
             </div>
-          );
-        };
-        
-        export default ChartThree;        
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+export default ChartThree;
