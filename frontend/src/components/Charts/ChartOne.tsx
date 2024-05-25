@@ -48399,7 +48399,6 @@ const countriesAndCities: CountryCities = {"Japan": [
 ]
 };
 
-
 const ChartThree: React.FC = () => {
   const [state, setState] = useState<ChartThreeState>({
     series: [],
@@ -48418,12 +48417,12 @@ const ChartThree: React.FC = () => {
         `https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/${city}?include=fcst%2Cobs%2Chistfcst%2Cstats%2Cdays%2Chours%2Ccurrent%2Calerts&key=XMJF54BDVDFY3YXBQ84UE6P6A&options=beta&contentType=json`
       );
       const forecast = response.data.days;
-      const windSpeedData = forecast.map((day: any) => day.windspeed); // Extract wind speed
+      const weatherData = forecast.map((day: any) => Math.round((day.tempmax - 32) * (5 / 9)));
       const days = forecast.map((day: any) => {
         const date = new Date(day.datetime);
         return `${date.toLocaleString("en", { month: "short" })} ${date.getDate()}`;
       });
-      setState({ series: windSpeedData, days });
+      setState({ series: weatherData, days });
     } catch (error) {
       console.error("Error fetching weather data:", error);
     }
@@ -48442,14 +48441,14 @@ const ChartThree: React.FC = () => {
     <div className="col-span-12 rounded-sm border border-stroke bg-white px-5 pb-5 pt-7.5 shadow-default dark:border-strokedark dark:bg-boxdark sm:px-7.5 xl:col-span-5">
       <div className="mb-3 justify-between gap-4 sm:flex">
         <div>
-          <h5 className="text-lg font-semibold text-black dark:text-white">
-            Weekly Wind Speed
+          <h5 className="text-xl font-semibold text-black dark:text-white">
+            Weekly Weather Forecast
           </h5>
         </div>
         <div className="flex">
           <select
             className="px-1 py-1 border rounded text-xs mr-2 mb-2"
-            style={{ width: '120px' }} // Inline style for fixed width
+            style={{ width: '120px' }}
             value={selectedCountry}
             onChange={handleCountryChange}
           >
@@ -48461,7 +48460,7 @@ const ChartThree: React.FC = () => {
           </select>
           <select
             className="px-1 py-1 border rounded text-xs mb-2"
-            style={{ width: '120px' }} // Inline style for fixed width
+            style={{ width: '120px' }}
             value={selectedCity}
             onChange={handleCityChange}
           >
@@ -48483,21 +48482,21 @@ const ChartThree: React.FC = () => {
                 categories: state.days,
               },
             }}
-            series={[{ name: "Wind Speed", data: state.series }]} // Updated series name to Wind Speed
+            series={[{ name: "Temperature", data: state.series }]}
             type="line"
           />
         </div>
       </div>
 
       <div className="-mx-8 flex flex-wrap items-center justify-center gap-y-3">
-        {state.series.map((windSpeed, index) => ( // Updated variable name to windSpeed
+        {state.series.map((temp, index) => (
           <div className="w-full px-8 sm:w-1/2" key={index}>
             <div className="flex w-full items-center">
               <p className="flex w-full justify-between text-sm font-medium text-black dark:text-white">
                 <span style={{ width: "60px" }}>
                   {state.days[index]}
                 </span>
-                <span>{windSpeed} m/s</span> {/* Adjusted for wind speed in meters per second */}
+                <span>{temp}°C</span>
               </p>
             </div>
           </div>

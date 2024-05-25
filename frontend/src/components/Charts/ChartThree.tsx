@@ -48449,7 +48449,7 @@ const ChartThree: React.FC = () => {
         <div className="flex">
           <select
             className="px-1 py-1 border rounded text-xs mr-2 mb-2"
-            style={{ width: '100px' }}
+            style={{ width: '120px' }}
             value={selectedCountry}
             onChange={handleCountryChange}
           >
@@ -48461,7 +48461,7 @@ const ChartThree: React.FC = () => {
           </select>
           <select
             className="px-1 py-1 border rounded text-xs mb-2"
-            style={{ width: '100px' }}
+            style={{ width: '120px' }}
             value={selectedCity}
             onChange={handleCityChange}
           >
