@@ -2,14 +2,13 @@ from flask import Flask, jsonify, request
 from config import Config, TestConfig
 from models import db
 from populate_db import *
-from api import register_blueprints
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
 import os
 from dotenv import load_dotenv
+from api import register_blueprints
 
 load_dotenv()
-
 
 def create_app(config_class=Config):
     app = Flask(__name__)
@@ -24,8 +23,7 @@ def create_app(config_class=Config):
 
     with app.app_context():
         # Import models here to ensure they are known to SQLAlchemy
-        from models import Flight, SeatMap, AircraftType, Airport, Pilot, CabinCrew, Passenger, FlightSeatAssignment, User
-
+        from models import Flight, SeatMap, AircraftType, Airport, Pilot, CabinCrew, Passenger, FlightSeatAssignment, User  
         db.create_all()
         # Populate the tables if they are empty
         if not app.config['TESTING']:  # Only populate for non-test environments

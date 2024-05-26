@@ -112,7 +112,9 @@ const ExtendedTable: React.FC<ExtendedTableProps> = ({ roster }) => {
                 <p className="text-black dark:text-white">{pilot.age}</p>
               </div>
               <div className="flex items-center justify-center p-2.5">
-                <p className="text-black dark:text-white">{pilot.gender}</p>
+                <p className="text-black dark:text-white">
+                  {pilot.gender.charAt(0).toUpperCase() + pilot.gender.slice(1)}
+                </p>
               </div>
               <div className="flex items-center justify-center p-2.5">
                 <p className="text-black dark:text-white">
@@ -186,7 +188,10 @@ const ExtendedTable: React.FC<ExtendedTableProps> = ({ roster }) => {
                 <p className="text-black dark:text-white">{member.age}</p>
               </div>
               <div className="flex items-center justify-center p-2.5">
-                <p className="text-black dark:text-white">{member.gender}</p>
+                <p className="text-black dark:text-white">
+                  {member.gender.charAt(0).toUpperCase() +
+                    member.gender.slice(1)}
+                </p>
               </div>
               <div className="flex items-center justify-center p-2.5">
                 <p className="text-black dark:text-white">
@@ -260,7 +265,10 @@ const ExtendedTable: React.FC<ExtendedTableProps> = ({ roster }) => {
                 <p className="text-black dark:text-white">{passenger.age}</p>
               </div>
               <div className="flex items-center justify-center p-2.5">
-                <p className="text-black dark:text-white">{passenger.gender}</p>
+                <p className="text-black dark:text-white">
+                  {passenger.gender.charAt(0).toUpperCase() +
+                    passenger.gender.slice(1)}
+                </p>
               </div>
               <div className="flex items-center justify-center p-2.5">
                 <p className="text-black dark:text-white">
