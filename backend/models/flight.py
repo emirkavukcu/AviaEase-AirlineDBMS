@@ -3,6 +3,8 @@ from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy import Sequence, Integer
 
 flight_number_seq = Sequence('flight_number_seq', start=1000, increment=1)
+
+
 class Flight(db.Model):
     flight_number = db.Column(db.Integer, flight_number_seq, primary_key=True, server_default=flight_number_seq.next_value())
     airline_code = db.Column(db.String(2), nullable=False) # AE

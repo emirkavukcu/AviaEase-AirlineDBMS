@@ -21,3 +21,4 @@ def register_blueprints(app):
     app.register_blueprint(airports, url_prefix='/api')
     app.register_blueprint(details, url_prefix='/api')
     app.register_blueprint(auth, url_prefix='/api')
+

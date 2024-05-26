@@ -10,6 +10,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+
 def create_app(config_class=Config):
     app = Flask(__name__)
     CORS(app)
@@ -53,6 +54,11 @@ def create_app(config_class=Config):
     return app
 
 app = create_app()
+
+
+@app.route('/')
+def index():
+    return jsonify({"message": "Welcome to the Airline DBMS API"}), 200
 
 if __name__ == '__main__':
     print(app.url_map)
