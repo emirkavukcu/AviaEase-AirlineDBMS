@@ -1,10 +1,12 @@
 from flask import Blueprint, request, jsonify
 from models import CabinCrew, db
 import random
+from flask_jwt_extended import jwt_required
 
 cabin_crew = Blueprint('cabin_crew', __name__)
 
 @cabin_crew.route('/cabin-crew', methods=['GET'])
+@jwt_required()
 def get_crew_members():
     # Pagination parameters
     page = request.args.get('page', 1, type=int)
@@ -38,7 +40,8 @@ def get_crew_members():
     if attendant_type:
         query = query.filter(CabinCrew.attendant_type.ilike(attendant_type))
     if vehicle_type_ids:
-        query = query.filter(CabinCrew.vehicle_type_ids.op('&&')(db.cast(vehicle_type_ids, db.ARRAY(db.Integer))))
+      for vehicle_type_id in vehicle_type_ids:
+        query = query.filter(CabinCrew.vehicle_type_ids.any(vehicle_type_id))
 
     # Sort by attendant_id
     query = query.order_by(CabinCrew.attendant_id)
@@ -72,6 +75,7 @@ def get_crew_members():
 
 
 @cabin_crew.route('/create_cabin-crew', methods=['POST'])
+@jwt_required()
 def create_crew_member():
     data = request.get_json()
 

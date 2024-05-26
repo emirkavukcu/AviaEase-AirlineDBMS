@@ -5,10 +5,19 @@ from sqlalchemy.orm.attributes import flag_modified
 import numpy as np
 import random
 
+
 def seat_plan_auto(flight_number, vehicle_type_id):
+    # Default values to avoid UnboundLocalError
+    senior_pilot_num_needed = 0
+    junior_pilot_num_needed = 0
+    trainee_pilot_num_needed = 0
+    chief_cabin_crew_num_needed = 0
+    regular_cabin_crew_num_needed = 0
+    chef_num_needed = 0
+    passenger_num_needed = 0
 
     # Boeing 737 or Airbus A320
-    if(vehicle_type_id == 1 or vehicle_type_id == 2):
+    if vehicle_type_id == 1 or vehicle_type_id == 2:
         senior_pilot_num_needed = 1
         junior_pilot_num_needed = 1
         trainee_pilot_num_needed = random.randint(0, 2)
@@ -20,7 +29,7 @@ def seat_plan_auto(flight_number, vehicle_type_id):
             passenger_num_needed = 122
 
     # Boeing 777
-    elif(vehicle_type_id == 3):
+    elif vehicle_type_id == 3:
         senior_pilot_num_needed = random.randint(1, 2)
         junior_pilot_num_needed = random.randint(1, 2)
         trainee_pilot_num_needed = random.randint(1, 2)
@@ -31,39 +40,49 @@ def seat_plan_auto(flight_number, vehicle_type_id):
         if passenger_num_needed > 160:
             passenger_num_needed = 160
 
+    # Handle unexpected vehicle_type_id
+    else:
+        return "Invalid vehicle type ID"
+
     senior_pilots = find_available_pilots(flight_number, "senior", senior_pilot_num_needed)
     if senior_pilots == "Error":
         return "Not enough available senior pilots"
-    
+
     junior_pilots = find_available_pilots(flight_number, "junior", junior_pilot_num_needed)
     if junior_pilots == "Error":
         return "Not enough available junior pilots"
-    
+
     trainee_pilots = find_available_pilots(flight_number, "trainee", trainee_pilot_num_needed)
     if trainee_pilots == "Error":
         trainee_pilots = []
-    
+
     chief_cabin_crews = find_available_cabin_crew(flight_number, "chief", chief_cabin_crew_num_needed)
     if chief_cabin_crews == "Error":
         return "Not enough available senior cabin crew"
-    
+
     regular_cabin_crews = find_available_cabin_crew(flight_number, "regular", regular_cabin_crew_num_needed)
     if regular_cabin_crews == "Error":
         return "Not enough available regular cabin crew"
-    
+
     chefs = []
-    if(chef_num_needed > 0):
+    if chef_num_needed > 0:
         chefs = find_available_cabin_crew(flight_number, "chef", chef_num_needed)
-        
+
     passengers = find_available_passengers(flight_number, passenger_num_needed)
     if passengers == "Error":
         return "Not enough available passengers"
 
-    result = assign_seats(senior_pilots, junior_pilots, trainee_pilots, chief_cabin_crews, regular_cabin_crews, chefs, passengers, flight_number, vehicle_type_id)    
+    result = assign_seats(senior_pilots, junior_pilots, trainee_pilots, chief_cabin_crews, regular_cabin_crews, chefs,
+                          passengers, flight_number, vehicle_type_id)
     return result
 
+
 def assign_seats(senior_pilots, junior_pilots, trainee_pilots, chief_cabin_crews, regular_cabin_crews, chefs, passengers, flight_number, vehicle_type_id):
-    
+
+    seat_map = SeatMap.query.filter(SeatMap.aircraft_type_id == vehicle_type_id, SeatMap.seat_type == "pilot").first()
+    if not seat_map:
+        return "Seat map not found"
+
     if(vehicle_type_id == 1 or vehicle_type_id == 2):     
         seniorPilotIdx = SeatMap.query.filter(SeatMap.aircraft_type_id == vehicle_type_id, SeatMap.seat_type == "pilot").first().id
         juniorPilotIdx = seniorPilotIdx + 1

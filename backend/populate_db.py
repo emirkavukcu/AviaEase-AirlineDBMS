@@ -136,7 +136,7 @@ def populate_aircraft_types():
             'Stuffed Chicken Breast', 
             'Butternut Squash Risotto',  
             'Asian Beef Salad ',  
-            'Chickpea andPotato Curry',  
+            'Chickpea and Potato Curry',  
             'Glazed Salmon with Broccoli',  
             'Chocolate Mousse', 
         ]

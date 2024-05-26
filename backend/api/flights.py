@@ -4,11 +4,14 @@ from services import calculate_distance, seat_plan_auto
 from datetime import datetime, timedelta
 from sqlalchemy import cast, String 
 from sqlalchemy.orm import aliased
+from flask_jwt_extended import jwt_required
+
 
 flights = Blueprint('flights', __name__)
 
 # Endpoint to create a flight
 @flights.route('/create_flight', methods=['POST'])
+@jwt_required()
 def create_flight():
     data = request.get_json()
     required_fields = ['flight_time', 'source', 'destination', 'vehicle_type_id', 'create_roster']
@@ -63,12 +66,19 @@ def create_flight():
         print(str(e))
         return jsonify({"error": str(e)}), 500
     
+from datetime import datetime
+from sqlalchemy.sql import func, and_
+
+from datetime import datetime, timedelta
+from sqlalchemy.sql import func, and_
+
 # Endpoint to get flights with filtering and pagination 
 @flights.route('/flights', methods=['GET'])
+@jwt_required()
 def get_flights():
     page = request.args.get('page', 1, type=int)
     per_page = request.args.get('per_page', 20, type=int)
-
+    print(request.headers)
     # Filter parameters
     flight_number_prefix = request.args.get('flight_number')
     min_date_time = request.args.get('min_date_time')
@@ -77,12 +87,17 @@ def get_flights():
     max_duration = request.args.get('max_duration', type=int)
     min_distance = request.args.get('min_distance', type=float)
     max_distance = request.args.get('max_distance', type=float)
+
     source_airport = request.args.get('source_airport')
     destination_airport = request.args.get('destination_airport')
+
     source_city = request.args.get('source_city')
     destination_city = request.args.get('destination_city')
+
     source_country = request.args.get('source_country')
     destination_country = request.args.get('destination_country')
+    aircraft_type_id = request.args.get('aircraft_type_id', type=int)
+    status = request.args.get('status') # active, passed, pending
 
     query = Flight.query
 
@@ -105,6 +120,16 @@ def get_flights():
         query = query.filter(Flight.source_airport.ilike(source_airport))
     if destination_airport:
         query = query.filter(Flight.destination_airport.ilike(destination_airport))
+    if aircraft_type_id is not None:
+        query = query.filter(Flight.aircraft_type_id == aircraft_type_id)
+    if status:
+        now = datetime.now()
+        if status == 'passed':
+            query = query.filter(Flight.date_time + func.make_interval(0, 0, 0, 0, 0, Flight.duration, 0) < now)
+        elif status == 'active':
+            query = query.filter(and_(Flight.date_time <= now, Flight.date_time + func.make_interval(0, 0, 0, 0, 0, Flight.duration, 0) > now))
+        elif status == 'pending':
+            query = query.filter(Flight.date_time > now)
 
     # Join with Airport to filter by city or country
     source_airport_alias = aliased(Airport)
@@ -171,6 +196,8 @@ def get_flights():
     }
 
     return jsonify(response), 200
+
+
 
 
 
