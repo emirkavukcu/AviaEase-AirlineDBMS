@@ -1,10 +1,12 @@
 from flask import Blueprint, jsonify, request
 from models import db, Passenger
+from flask_jwt_extended import jwt_required
 
 passengers = Blueprint('passengers', __name__)
 
 # Get passengers with optional filtering
 @passengers.route('/passengers', methods=['GET'])
+@jwt_required()
 def get_passengers():
     # Pagination parameters
     page = request.args.get('page', 1, type=int)
@@ -64,9 +66,9 @@ def get_passengers():
 
 # Create a new passenger
 @passengers.route('/create_passenger', methods=['POST'])
+@jwt_required()
 def create_passenger():
     data = request.get_json()  # Get data from JSON body
-
     # Check for required fields
     required_fields = ['name', 'age', 'gender', 'nationality']
     missing_fields = [field for field in required_fields if field not in data or data.get(field) is None]
@@ -80,7 +82,7 @@ def create_passenger():
         age=data['age'],
         gender=data['gender'],
         nationality=data['nationality'],
-        parent_id=data.get('parent_id'),
+        parent_id=data.get('parent_id', None),
         affiliated_passenger_ids=data.get('affiliated_passenger_ids', []),
         scheduled_flights=data.get('scheduled_flights', [])
     )

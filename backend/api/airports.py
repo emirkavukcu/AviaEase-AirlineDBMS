@@ -4,10 +4,12 @@ from services import calculate_distance, seat_plan_auto
 from datetime import datetime, timedelta
 from sqlalchemy import cast, String 
 import pycountry
+from flask_jwt_extended import jwt_required
 
 airports = Blueprint('airports', __name__)
 
 @airports.route('/airport_codes', methods=['GET'])
+@jwt_required()
 def get_airports():
   airports = Airport.query.all()
   airports_data = [  
@@ -16,10 +18,11 @@ def get_airports():
   ]
   return jsonify(airports_data), 200
 
-from flask import jsonify
+
 import pycountry
 
 @airports.route('/airports', methods=['GET'])
+@jwt_required()
 def get_airport_details():
     airports = Airport.query.all()
     

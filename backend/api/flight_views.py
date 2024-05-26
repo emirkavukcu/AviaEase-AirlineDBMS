@@ -1,10 +1,12 @@
 from flask import Blueprint, request, jsonify
 from models import db, CabinCrew, FlightSeatAssignment, Passenger, Pilot, Flight, SeatMap
+from flask_jwt_extended import jwt_required
 
 flight_views = Blueprint('flight_views', __name__)
 
 
 @flight_views.route('/<int:flight_id>/tabular_view', methods=['GET'])
+@jwt_required()
 def tabular_view(flight_id: int):
     with db.session.no_autoflush:
         flight = db.session.get(Flight, flight_id)
@@ -45,6 +47,7 @@ def tabular_view(flight_id: int):
 
 
 @flight_views.route('/<int:flight_id>/plane_view', methods=['GET'])
+@jwt_required()
 def plane_view(flight_id):
     with db.session.no_autoflush:
         flight = db.session.get(Flight, flight_id)

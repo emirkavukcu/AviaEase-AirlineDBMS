@@ -7,3 +7,4 @@ from .pilot import Pilot
 from .cabin_crew import CabinCrew
 from .passenger import Passenger
 from .seat_assignment import FlightSeatAssignment
+from .user import User
