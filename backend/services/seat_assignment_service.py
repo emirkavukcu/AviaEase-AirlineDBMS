@@ -78,7 +78,11 @@ def seat_plan_auto(flight_number, vehicle_type_id):
 
 
 def assign_seats(senior_pilots, junior_pilots, trainee_pilots, chief_cabin_crews, regular_cabin_crews, chefs, passengers, flight_number, vehicle_type_id):
-    
+
+    seat_map = SeatMap.query.filter(SeatMap.aircraft_type_id == vehicle_type_id, SeatMap.seat_type == "pilot").first()
+    if not seat_map:
+        return "Seat map not found"
+
     if(vehicle_type_id == 1 or vehicle_type_id == 2):     
         seniorPilotIdx = SeatMap.query.filter(SeatMap.aircraft_type_id == vehicle_type_id, SeatMap.seat_type == "pilot").first().id
         juniorPilotIdx = seniorPilotIdx + 1
