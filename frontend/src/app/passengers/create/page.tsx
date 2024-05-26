@@ -179,7 +179,7 @@ const PassengerCreationForm = () => {
 
               <div className="mb-4.5">
                 <label className="mb-3 block font-medium text-black dark:text-white">
-                  Affiliates <span className=" text-red">*</span>
+                  Affiliates
                 </label>
                 <input
                   type="text"

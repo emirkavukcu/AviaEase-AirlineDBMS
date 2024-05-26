@@ -84,7 +84,6 @@ def populate_db():
     db.session.commit()
 
 
-
 def test_schedule_is_available(app, init_database):
     with app.app_context():
         start_time = datetime(2024, 5, 1, 12, 0, 0)
