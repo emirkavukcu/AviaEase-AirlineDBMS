@@ -11,7 +11,7 @@ const MenuList = (props: { options: any; children: any; getValue: any }) => {
 
   return (
     <List
-      width={200}
+      width={150}
       height={height * 5}
       itemCount={children.length}
       itemSize={height}

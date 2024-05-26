@@ -1,8 +1,10 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import DefaultLayout from "@/components/Layouts/DefaultLayout";
-import DatePickerOne from "@/components/FormElements/DatePicker/DatePickerOne";
 import Select from "react-select";
+import AlertError from "@/components/Alerts/AlertError";
+import AlertOk from "@/components/Alerts/AlertOk";
+import { fetchWithAuth } from "@/utils/fetchWithAuth";
 
 const hourOptions: any = [];
 for (let hour = 0; hour <= 23; hour++) {
@@ -37,10 +39,15 @@ const FlightCreationForm = () => {
     any[]
   >([]);
 
+  const [alerts, setAlerts] = useState<any[]>([]);
+  const [isCreating, setIsCreating] = useState(false);
+
   useEffect(() => {
     const fetchAirports = async () => {
       try {
-        const response = await fetch("http://127.0.0.1:5000/api/airports");
+        const response = await fetchWithAuth(
+          "http://127.0.0.1:5000/api/airports",
+        );
         const data = await response.json();
         console.log(data);
         setAirports(data);
@@ -59,7 +66,8 @@ const FlightCreationForm = () => {
           (airport) =>
             airport.country === selectedCountrySource && airport.city,
         )
-        .map((airport) => airport.city);
+        .map((airport) => airport.city)
+        .sort();
       setCitiesSource([...new Set(countryCities)]);
     }
   }, [selectedCountrySource]);
@@ -79,7 +87,8 @@ const FlightCreationForm = () => {
     if (selectedCountryDestination) {
       const countryCities = airports
         .filter((airport) => airport.country === selectedCountryDestination)
-        .map((airport) => airport.city);
+        .map((airport) => airport.city)
+        .sort();
       setCitiesDestination([...new Set(countryCities)]);
     }
   }, [selectedCountryDestination]);
@@ -106,8 +115,17 @@ const FlightCreationForm = () => {
     }
   };
 
+  const addAlert = (type: "error" | "success", message: string) => {
+    const id = Date.now();
+    setAlerts((prevAlerts) => [...prevAlerts, { id, type, message }]);
+    setTimeout(() => {
+      setAlerts((prevAlerts) => prevAlerts.filter((alert) => alert.id !== id));
+    }, 3000);
+  };
+
   const createFlight = async () => {
     if (date && hour && destinationAirport && sourceAirport && aircraftType) {
+      setIsCreating(true);
       const flight_time = `${date}T${hour.value}:00`;
       const source = sourceAirport;
       const destination = destinationAirport;
@@ -115,19 +133,24 @@ const FlightCreationForm = () => {
 
       console.log(flight_time, source, destination, vehicle_type_id);
 
-      const response = await fetch("http://127.0.0.1:5000/api/create_flight", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
+      const response = await fetchWithAuth(
+        "http://127.0.0.1:5000/api/create_flight",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            flight_time,
+            source,
+            destination,
+            vehicle_type_id,
+            create_roster: "Yes",
+          }),
         },
-        body: JSON.stringify({
-          flight_time,
-          source,
-          destination,
-          vehicle_type_id,
-          create_roster: "Yes",
-        }),
-      });
+      );
+
+      setIsCreating(false);
 
       if (response.ok) {
         setDate("");
@@ -139,23 +162,26 @@ const FlightCreationForm = () => {
         setSelectedCitySource(null);
         setSelectedCountryDestination(null);
         setSelectedCityDestination(null);
+        addAlert("success", "Flight successfully created");
       } else {
-        console.error("Failed to create flight");
+        addAlert("error", "Failed to create flight");
       }
     } else {
-      console.error("All fields must be filled");
+      addAlert("error", "All fields must be filled");
     }
   };
 
   const uniqueCountryOptions = Array.from(
     new Set(airports.map((airport) => airport.country)),
-  ).map((country) => ({ value: country, label: country }));
+  )
+    .sort()
+    .map((country) => ({ value: country, label: country }));
 
   return (
     <DefaultLayout>
       <div className="flex justify-center">
         <div className="flex w-1/2 flex-col">
-          <div className="rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark">
+          <div className="grayinputs rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark">
             <div className="border-b border-stroke px-10 py-4 dark:border-strokedark">
               <h3 className="text-2xl font-medium text-black dark:text-white">
                 Flight Creation
@@ -169,7 +195,7 @@ const FlightCreationForm = () => {
                   </label>
                   <input
                     type="date"
-                    className="rounded-sm border  border-graydark bg-white p-1 shadow-default dark:border-strokedark dark:bg-boxdark"
+                    className="rounded-sm border border-graydark bg-white p-1  dark:border-strokedark dark:bg-boxdark"
                     onChange={(e) => setDate(e.target.value)}
                     value={date}
                   />
@@ -198,8 +224,8 @@ const FlightCreationForm = () => {
                   onChange={(selectedOption) =>
                     setSelectedCountrySource(selectedOption?.value)
                   }
-                  value={citiesSource.find(
-                    (city) => city.value === selectedCitySource,
+                  value={uniqueCountryOptions.find(
+                    (country) => country.value === selectedCountrySource,
                   )}
                 />
               </div>
@@ -218,7 +244,11 @@ const FlightCreationForm = () => {
                     setSelectedCitySource(selectedOption?.value)
                   }
                   isDisabled={!selectedCountrySource}
-                  value={selectedCitySource}
+                  value={
+                    selectedCitySource
+                      ? { value: selectedCitySource, label: selectedCitySource }
+                      : null
+                  }
                 />
               </div>
 
@@ -236,7 +266,11 @@ const FlightCreationForm = () => {
                     setSourceAirport(selectedOption?.value)
                   }
                   isDisabled={!selectedCitySource}
-                  value={sourceAirport}
+                  value={
+                    sourceAirport
+                      ? { value: sourceAirport, label: sourceAirport }
+                      : null
+                  }
                 />
               </div>
 
@@ -250,7 +284,9 @@ const FlightCreationForm = () => {
                   onChange={(selectedOption) =>
                     setSelectedCountryDestination(selectedOption?.value)
                   }
-                  value={selectedCountryDestination}
+                  value={uniqueCountryOptions.find(
+                    (country) => country.value === selectedCountryDestination,
+                  )}
                 />
               </div>
 
@@ -268,7 +304,14 @@ const FlightCreationForm = () => {
                     setSelectedCityDestination(selectedOption?.value)
                   }
                   isDisabled={!selectedCountryDestination}
-                  value={selectedCityDestination}
+                  value={
+                    selectedCityDestination
+                      ? {
+                          value: selectedCityDestination,
+                          label: selectedCityDestination,
+                        }
+                      : null
+                  }
                 />
               </div>
 
@@ -286,7 +329,11 @@ const FlightCreationForm = () => {
                     setDestinationAirport(selectedOption?.value)
                   }
                   isDisabled={!selectedCityDestination}
-                  value={destinationAirport}
+                  value={
+                    destinationAirport
+                      ? { value: destinationAirport, label: destinationAirport }
+                      : null
+                  }
                 />
               </div>
 
@@ -304,16 +351,41 @@ const FlightCreationForm = () => {
                   onChange={(selectedOption) =>
                     setAircraftType(selectedOption?.value)
                   }
-                  value={aircraftType}
+                  value={
+                    aircraftType
+                      ? { value: aircraftType, label: aircraftType }
+                      : null
+                  }
                 />
               </div>
 
               <button
-                className="flex w-full justify-center rounded bg-primary p-3 font-medium text-gray hover:bg-opacity-90"
+                className="flex w-full justify-center rounded bg-primary p-3 font-medium text-gray hover:bg-opacity-90 disabled:opacity-50"
                 onClick={createFlight}
+                disabled={isCreating}
               >
-                Create Flight
+                {isCreating ? "Creating..." : "Create Flight"}
               </button>
+
+              <div className="fixed bottom-5 right-5 space-y-2">
+                {alerts.map((alert) =>
+                  alert.type === "error" ? (
+                    <div
+                      key={alert.id}
+                      className="w-100 opacity-100 transition-opacity duration-1000 ease-out"
+                    >
+                      <AlertError message={alert.message} />
+                    </div>
+                  ) : (
+                    <div
+                      key={alert.id}
+                      className="w-100 opacity-100 transition-opacity duration-1000 ease-out"
+                    >
+                      <AlertOk message={alert.message} />
+                    </div>
+                  ),
+                )}
+              </div>
             </div>
           </div>
         </div>

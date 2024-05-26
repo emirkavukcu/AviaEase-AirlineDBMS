@@ -12,3 +12,5 @@ pycountry
 pytest 
 flask-testing
 locust
+Flask-JWT-Extended
+bcrypt

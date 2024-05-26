@@ -1,10 +1,12 @@
 from flask import Blueprint, jsonify, request
 from models import Flight, FlightSeatAssignment
 from services import seat_plan_auto
+from flask_jwt_extended import jwt_required
 
 roster = Blueprint('roster', __name__)
 
 @roster.route('/create_roster_auto', methods=['POST'])
+@jwt_required()
 def create_roster_auto():
     data = request.get_json()
     required_fields = ['flight_number']

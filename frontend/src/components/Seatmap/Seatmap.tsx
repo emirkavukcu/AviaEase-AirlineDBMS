@@ -27,7 +27,7 @@ const SeatMap: React.FC<SeatMapProps> = ({ passengers = [] }) => {
   } | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const handleMouseEnter = (passenger: Passenger, event: React.MouseEvent) => {
+  const handleMouseMove = (event: React.MouseEvent) => {
     if (containerRef.current) {
       const containerRect = containerRef.current.getBoundingClientRect();
       const xOffset = 10; // Distance from the cursor
@@ -36,8 +36,12 @@ const SeatMap: React.FC<SeatMapProps> = ({ passengers = [] }) => {
       const cursorY = event.clientY - containerRect.top;
 
       setHoverPosition({ x: cursorX + xOffset, y: cursorY + yOffset });
-      setHoveredPassenger(passenger);
     }
+  };
+
+  const handleMouseEnter = (passenger: Passenger, event: React.MouseEvent) => {
+    setHoveredPassenger(passenger);
+    handleMouseMove(event); // Set initial position
   };
 
   const handleMouseLeave = () => {
@@ -101,6 +105,7 @@ const SeatMap: React.FC<SeatMapProps> = ({ passengers = [] }) => {
                   passenger && handleMouseEnter(passenger, e)
                 }
                 onMouseLeave={handleMouseLeave}
+                onMouseMove={(e) => passenger && handleMouseMove(e)}
               >
                 {seatNumber}
               </div>,
@@ -122,6 +127,7 @@ const SeatMap: React.FC<SeatMapProps> = ({ passengers = [] }) => {
                   passenger && handleMouseEnter(passenger, e)
                 }
                 onMouseLeave={handleMouseLeave}
+                onMouseMove={(e) => passenger && handleMouseMove(e)}
               >
                 {seatNumber}
               </div>,
@@ -147,6 +153,7 @@ const SeatMap: React.FC<SeatMapProps> = ({ passengers = [] }) => {
                   passenger && handleMouseEnter(passenger, e)
                 }
                 onMouseLeave={handleMouseLeave}
+                onMouseMove={(e) => passenger && handleMouseMove(e)}
               >
                 {seatNumber}
               </div>,
@@ -168,6 +175,7 @@ const SeatMap: React.FC<SeatMapProps> = ({ passengers = [] }) => {
                   passenger && handleMouseEnter(passenger, e)
                 }
                 onMouseLeave={handleMouseLeave}
+                onMouseMove={(e) => passenger && handleMouseMove(e)}
               >
                 {seatNumber}
               </div>,
@@ -201,7 +209,7 @@ const SeatMap: React.FC<SeatMapProps> = ({ passengers = [] }) => {
 
   return (
     <div
-      className="airplane-container flex flex-col items-center p-4"
+      className="airplane-container relative flex flex-col items-center p-4"
       ref={containerRef}
     >
       {/* Pilot Seats */}
@@ -223,7 +231,12 @@ const SeatMap: React.FC<SeatMapProps> = ({ passengers = [] }) => {
       {hoveredPassenger && hoverPosition && (
         <div
           className="border-gray-300 absolute rounded border bg-white p-4 shadow-lg"
-          style={{ top: hoverPosition.y, left: hoverPosition.x }}
+          style={{
+            top: `${hoverPosition.y}px`,
+            left: `${hoverPosition.x}px`,
+            whiteSpace: "nowrap",
+            overflow: "hidden",
+          }}
         >
           <h3 className="text-lg font-bold">{hoveredPassenger.name}</h3>
           <p>{hoveredPassenger.person_type}</p>

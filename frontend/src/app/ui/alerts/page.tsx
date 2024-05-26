@@ -60,14 +60,10 @@ const Alerts = () => {
                 ></path>
               </svg>
             </div>
-            <div className="w-full">
-              <h5 className="mb-3 text-lg font-semibold text-black dark:text-[#34D399] ">
+            <div className="flex w-full items-center">
+              <h5 className="text-lg font-semibold text-black dark:text-[#34D399] ">
                 Message Sent Successfully
               </h5>
-              <p className="text-base leading-relaxed text-body">
-                Lorem Ipsum is simply dummy text of the printing and typesetting
-                industry.
-              </p>
             </div>
           </div>
           {/* <!-- Alerts Item --> */}
@@ -87,15 +83,10 @@ const Alerts = () => {
                 ></path>
               </svg>
             </div>
-            <div className="w-full">
-              <h5 className="mb-3 font-semibold text-[#B45454]">
+            <div className="flex w-full items-center">
+              <h5 className="text-lg font-semibold text-[#B45454]">
                 There were 1 errors with your submission
               </h5>
-              <ul>
-                <li className="leading-relaxed text-[#CD5D5D]">
-                  Lorem Ipsum is simply dummy text of the printing
-                </li>
-              </ul>
             </div>
           </div>
         </div>

@@ -1,9 +1,11 @@
 from flask import Blueprint, jsonify, request
 from models import db, Pilot
+from flask_jwt_extended import jwt_required
 
 pilots = Blueprint('pilots', __name__)
 
 @pilots.route('/pilots', methods=['GET'])
+@jwt_required()
 def get_pilots():
     # Pagination parameters
     page = request.args.get('page', 1, type=int)
@@ -74,9 +76,10 @@ def get_pilots():
     }), 200
 
 @pilots.route('/create_pilot', methods=['POST'])
+@jwt_required()
 def create_pilot():
     data = request.get_json()
-
+    print(data)
     # Required fields
     required_fields = ['name', 'age', 'gender', 'nationality', 'known_languages', 'vehicle_type_id', 'allowed_range', 'seniority_level']
     if not all(field in data for field in required_fields):

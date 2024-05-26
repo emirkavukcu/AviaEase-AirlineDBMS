@@ -203,7 +203,7 @@ const ExtendedTable: React.FC<ExtendedTableProps> = ({ roster }) => {
           Passengers
         </h4>
 
-        <div className="flex max-h-[calc(25.69*1.5rem)] flex-col overflow-auto text-center">
+        <div className="flex max-h-[calc(29.5*1.5rem)] flex-col overflow-auto text-center">
           <div className="grid grid-cols-6 rounded-sm bg-gray-2 dark:bg-meta-4">
             <div className="p-2.5 xl:p-5">
               <h5 className="text-center text-sm font-medium uppercase xsm:text-base">
