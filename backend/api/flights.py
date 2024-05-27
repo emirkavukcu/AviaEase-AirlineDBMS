@@ -78,7 +78,6 @@ from sqlalchemy.sql import func, and_
 def get_flights():
     page = request.args.get('page', 1, type=int)
     per_page = request.args.get('per_page', 20, type=int)
-    print(request.headers)
     # Filter parameters
     flight_number_prefix = request.args.get('flight_number')
     min_date_time = request.args.get('min_date_time')
