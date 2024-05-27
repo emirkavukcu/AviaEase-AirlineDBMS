@@ -64,7 +64,9 @@ const FlightCreationForm = () => {
       const countryCities = airports
         .filter(
           (airport) =>
-            airport.country === selectedCountrySource && airport.city,
+            airport.country === selectedCountrySource &&
+            airport.city &&
+            airport.city.trim() !== "",
         )
         .map((airport) => airport.city)
         .sort();
@@ -86,7 +88,12 @@ const FlightCreationForm = () => {
   useEffect(() => {
     if (selectedCountryDestination) {
       const countryCities = airports
-        .filter((airport) => airport.country === selectedCountryDestination)
+        .filter(
+          (airport) =>
+            airport.country === selectedCountryDestination &&
+            airport.city &&
+            airport.city.trim() !== "",
+        )
         .map((airport) => airport.city)
         .sort();
       setCitiesDestination([...new Set(countryCities)]);
@@ -125,6 +132,14 @@ const FlightCreationForm = () => {
 
   const createFlight = async () => {
     if (date && hour && destinationAirport && sourceAirport && aircraftType) {
+      const selectedDate = new Date(date);
+      const currentDate = new Date();
+      currentDate.setHours(0, 0, 0, 0); // Reset time part to compare only the date part
+
+      if (selectedDate < currentDate) {
+        addAlert("error", "Invalid Date");
+        return;
+      }
       setIsCreating(true);
       const flight_time = `${date}T${hour.value}:00`;
       const source = sourceAirport;
@@ -191,7 +206,7 @@ const FlightCreationForm = () => {
               <div className="flex gap-4">
                 <div className="mb-4.5">
                   <label className="mb-3 block font-medium text-black dark:text-white">
-                    Date
+                    Date <span className=" text-red">*</span>
                   </label>
                   <input
                     type="date"
@@ -203,36 +218,45 @@ const FlightCreationForm = () => {
 
                 <div className="mb-4.5 w-full">
                   <label className="mb-3 block w-full font-medium text-black dark:text-white">
-                    Hour
+                    Hour <span className=" text-red">*</span>
                   </label>
                   <Select
                     options={hourOptions}
                     placeholder="Select Hour"
                     onChange={setHour}
                     value={hour}
+                    isClearable
                   />
                 </div>
               </div>
 
               <div className="mb-4.5">
                 <label className="mb-3 block font-medium text-black dark:text-white">
-                  Source Country
+                  Source Country <span className=" text-red">*</span>
                 </label>
                 <Select
                   options={uniqueCountryOptions}
                   placeholder="Select Source Country"
-                  onChange={(selectedOption) =>
-                    setSelectedCountrySource(selectedOption?.value)
+                  onChange={(selectedOption) => {
+                    setSelectedCountrySource(selectedOption?.value);
+                    setSelectedCitySource(null);
+                    setSourceAirport(null);
+                  }}
+                  value={
+                    selectedCountrySource
+                      ? {
+                          value: selectedCountrySource,
+                          label: selectedCountrySource,
+                        }
+                      : null
                   }
-                  value={uniqueCountryOptions.find(
-                    (country) => country.value === selectedCountrySource,
-                  )}
+                  isClearable
                 />
               </div>
 
               <div className="mb-4.5">
                 <label className="mb-3 block font-medium text-black dark:text-white">
-                  Source City
+                  Source City <span className=" text-red">*</span>
                 </label>
                 <Select
                   options={citiesSource.map((city) => ({
@@ -240,21 +264,23 @@ const FlightCreationForm = () => {
                     label: city,
                   }))}
                   placeholder="Select Source City"
-                  onChange={(selectedOption) =>
-                    setSelectedCitySource(selectedOption?.value)
-                  }
+                  onChange={(selectedOption) => {
+                    setSelectedCitySource(selectedOption?.value);
+                    setSourceAirport(null);
+                  }}
                   isDisabled={!selectedCountrySource}
                   value={
                     selectedCitySource
                       ? { value: selectedCitySource, label: selectedCitySource }
                       : null
                   }
+                  isClearable
                 />
               </div>
 
               <div className="mb-4.5">
-                <label className="tfont-medium mb-3 block text-black dark:text-white">
-                  Source Airport
+                <label className="mb-3 block font-medium text-black dark:text-white">
+                  Source Airport <span className=" text-red">*</span>
                 </label>
                 <Select
                   options={airportOptionsSource.map((airport) => ({
@@ -271,28 +297,37 @@ const FlightCreationForm = () => {
                       ? { value: sourceAirport, label: sourceAirport }
                       : null
                   }
+                  isClearable
                 />
               </div>
 
               <div className="mb-4.5">
                 <label className="mb-3 block font-medium text-black dark:text-white">
-                  Destination Country
+                  Destination Country <span className=" text-red">*</span>
                 </label>
                 <Select
                   options={uniqueCountryOptions}
                   placeholder="Select Destination Country"
-                  onChange={(selectedOption) =>
-                    setSelectedCountryDestination(selectedOption?.value)
+                  onChange={(selectedOption) => {
+                    setSelectedCountryDestination(selectedOption?.value);
+                    setSelectedCityDestination(null);
+                    setDestinationAirport(null);
+                  }}
+                  value={
+                    selectedCountryDestination
+                      ? {
+                          value: selectedCountryDestination,
+                          label: selectedCountryDestination,
+                        }
+                      : null
                   }
-                  value={uniqueCountryOptions.find(
-                    (country) => country.value === selectedCountryDestination,
-                  )}
+                  isClearable
                 />
               </div>
 
               <div className="mb-4.5">
                 <label className="mb-3 block font-medium text-black dark:text-white">
-                  Destination City
+                  Destination City <span className=" text-red">*</span>
                 </label>
                 <Select
                   options={citiesDestination.map((city) => ({
@@ -300,9 +335,10 @@ const FlightCreationForm = () => {
                     label: city,
                   }))}
                   placeholder="Select Destination City"
-                  onChange={(selectedOption) =>
-                    setSelectedCityDestination(selectedOption?.value)
-                  }
+                  onChange={(selectedOption) => {
+                    setSelectedCityDestination(selectedOption?.value);
+                    setDestinationAirport(null);
+                  }}
                   isDisabled={!selectedCountryDestination}
                   value={
                     selectedCityDestination
@@ -312,12 +348,13 @@ const FlightCreationForm = () => {
                         }
                       : null
                   }
+                  isClearable
                 />
               </div>
 
               <div className="mb-4.5">
                 <label className="mb-3 block font-medium text-black dark:text-white">
-                  Destination Airport
+                  Destination Airport <span className=" text-red">*</span>
                 </label>
                 <Select
                   options={airportOptionsDestination.map((airport) => ({
@@ -334,12 +371,13 @@ const FlightCreationForm = () => {
                       ? { value: destinationAirport, label: destinationAirport }
                       : null
                   }
+                  isClearable
                 />
               </div>
 
               <div className="mb-4.5">
                 <label className="mb-3 block font-medium text-black dark:text-white">
-                  Aircraft Type
+                  Aircraft Type <span className=" text-red">*</span>
                 </label>
                 <Select
                   options={[
@@ -356,6 +394,7 @@ const FlightCreationForm = () => {
                       ? { value: aircraftType, label: aircraftType }
                       : null
                   }
+                  isClearable
                 />
               </div>
 
@@ -372,14 +411,14 @@ const FlightCreationForm = () => {
                   alert.type === "error" ? (
                     <div
                       key={alert.id}
-                      className="w-100 opacity-100 transition-opacity duration-1000 ease-out"
+                      className="mr-5 opacity-100 transition-opacity duration-1000 ease-out"
                     >
                       <AlertError message={alert.message} />
                     </div>
                   ) : (
                     <div
                       key={alert.id}
-                      className="w-100 opacity-100 transition-opacity duration-1000 ease-out"
+                      className="mr-5 opacity-100 transition-opacity duration-1000 ease-out"
                     >
                       <AlertOk message={alert.message} />
                     </div>

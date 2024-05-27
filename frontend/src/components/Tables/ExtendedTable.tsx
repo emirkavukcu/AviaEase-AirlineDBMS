@@ -91,7 +91,7 @@ const ExtendedTable: React.FC<ExtendedTableProps> = ({ roster }) => {
           {pilots.map((pilot, key) => (
             <div
               key={pilot.id}
-              className={`grid cursor-pointer grid-cols-6 hover:bg-slate-200 dark:hover:bg-meta-4 ${
+              className={`grid grid-cols-6 hover:bg-slate-200 dark:hover:bg-meta-4 ${
                 key === roster[0].length - 1
                   ? ""
                   : "border-b border-stroke dark:border-strokedark"
@@ -167,7 +167,7 @@ const ExtendedTable: React.FC<ExtendedTableProps> = ({ roster }) => {
           {crew.map((member, key) => (
             <div
               key={member.id}
-              className={`grid cursor-pointer grid-cols-6 hover:bg-slate-200 dark:hover:bg-meta-4 ${
+              className={`grid  grid-cols-6 hover:bg-slate-200 dark:hover:bg-meta-4 ${
                 key === roster[1].length - 1
                   ? ""
                   : "border-b border-stroke dark:border-strokedark"
@@ -244,7 +244,7 @@ const ExtendedTable: React.FC<ExtendedTableProps> = ({ roster }) => {
           {passengers.map((passenger, key) => (
             <div
               key={passenger.id}
-              className={`grid cursor-pointer grid-cols-6 hover:bg-slate-200 dark:hover:bg-meta-4 ${
+              className={`grid grid-cols-6 hover:bg-slate-200 dark:hover:bg-meta-4 ${
                 key === roster[2].length - 1
                   ? ""
                   : "border-b border-stroke dark:border-strokedark"

@@ -126,18 +126,22 @@ const FlightDetailsPage = ({
 
   return (
     <DefaultLayout>
-      <div className="mx-auto mt-8 w-3/4 rounded-lg border border-stroke bg-white px-5 pb-4 pt-6 shadow-default dark:border-strokedark dark:bg-boxdark sm:px-7.5 xl:pb-5">
+      <div className="mx-auto mt-8 w-3/4 rounded-lg border border-stroke bg-white px-5 pb-4 pt-6 shadow-default dark:border-strokedark dark:bg-boxdark dark:text-white sm:px-7.5 xl:pb-5">
         <h2 className="text-2xl font-semibold text-black dark:text-white">
           Flight Details
         </h2>
-        <div className="mt-4 grid grid-cols-1 gap-4 text-lg text-black lg:grid-cols-3 lg:gap-8">
-          <div className="grid grid-cols-2 gap-4 border-r pr-4 text-left lg:col-span-2">
+        <div className="mt-4 grid grid-cols-1 gap-4 text-lg text-black  dark:text-white lg:grid-cols-3 lg:gap-8">
+          <div className="grid grid-cols-2 gap-4 border-r pr-4 text-left dark:text-white lg:col-span-2">
             <div className="border-b pb-2">
-              <span className="font-semibold">Flight Number:</span>{" "}
+              <span className="font-semibold dark:text-white ">
+                Flight Number:
+              </span>{" "}
               {flightDetails.flight_number}
             </div>
             <div className="border-b pb-2">
-              <span className="font-semibold">Flight Date:</span>{" "}
+              <span className="font-semibold dark:text-white ">
+                Flight Date:
+              </span>{" "}
               {new Date(flightDetails.date_time).toLocaleString("en-GB", {
                 day: "2-digit",
                 month: "2-digit",
@@ -218,13 +222,13 @@ const FlightDetailsPage = ({
           Extended View
         </div>
         <div
-          className="inline-flex cursor-pointer items-center justify-center rounded-full bg-primary px-10 py-4 text-center font-medium text-white hover:bg-opacity-90 lg:px-8 xl:px-10"
+          className="inline-flex cursor-pointer items-center justify-center rounded-full bg-meta-3 px-10 py-4 text-center font-medium text-white hover:bg-opacity-90 lg:px-8 xl:px-10"
           onClick={handleDownloadJSON}
         >
           Download Data JSON
         </div>
         <div
-          className="inline-flex cursor-pointer items-center justify-center rounded-full bg-primary px-10 py-4 text-center font-medium text-white hover:bg-opacity-90 lg:px-8 xl:px-10"
+          className="inline-flex cursor-pointer items-center justify-center rounded-full bg-meta-3 px-10 py-4 text-center font-medium text-white hover:bg-opacity-90 lg:px-8 xl:px-10"
           onClick={handleDownloadSQL}
         >
           Download Data SQL

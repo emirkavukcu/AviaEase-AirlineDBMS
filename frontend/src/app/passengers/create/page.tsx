@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import DefaultLayout from "@/components/Layouts/DefaultLayout";
 import Select from "react-select";
 import AlertError from "@/components/Alerts/AlertError";
@@ -22,6 +22,18 @@ const PassengerCreationForm = () => {
 
   const [alerts, setAlerts] = useState<any[]>([]);
   const [isCreating, setIsCreating] = useState(false);
+  const [maxParentId, setMaxParentId] = useState(20000);
+
+  useEffect(() => {
+    const fetchDetails = async () => {
+      const response = await fetchWithAuth("http://127.0.0.1:5000/api/details");
+      const data = await response.json();
+      console.log(data);
+      setMaxParentId(data.passengers);
+    };
+
+    fetchDetails();
+  }, []);
 
   const addAlert = (type: string, message: string) => {
     const id = Date.now();
@@ -32,19 +44,30 @@ const PassengerCreationForm = () => {
   };
 
   const parseAffiliates = (input: string) => {
-    return input
+    if (!/^[\d,]+$/.test(input)) {
+      return false;
+    }
+    const affiliates = input
       .split(",")
       .map((item) => parseInt(item.trim(), 10))
       .filter((item) => !isNaN(item));
+
+    if (affiliates.length !== input.split(",").length) {
+      return false;
+    }
+    return affiliates;
   };
 
   const validateAffiliates = (affiliates: number[]) => {
     if (affiliates.length > 2) {
-      addAlert("error", "You can only select up to 2 affiliates.");
+      addAlert("error", "You can only select up to 2 affiliates");
       return false;
     }
-    if (affiliates.some((item) => item < 1 || item > 20000)) {
-      addAlert("error", "Affiliates must be integers between 1 and 20000.");
+    if (affiliates.some((item) => item < 1 || item > maxParentId)) {
+      addAlert(
+        "error",
+        `Affiliates must be integers between 1 and ${maxParentId}`,
+      );
       return false;
     }
     return true;
@@ -53,13 +76,23 @@ const PassengerCreationForm = () => {
   const createPassenger = async () => {
     if (name && age && gender && nationality) {
       const parsedAffiliates = parseAffiliates(affiliates);
-      if (affiliates && !validateAffiliates(parsedAffiliates)) {
+      if (affiliates && !parsedAffiliates) {
+        addAlert(
+          "error",
+          `Affiliates must be a comma separated list of integers`,
+        );
+        return;
+      }
+      if (affiliates && !validateAffiliates(parsedAffiliates as any)) {
         return;
       }
 
       if (parseInt(age, 10) < 3) {
-        if (!parentId || parentId < 1 || parentId > 20000) {
-          addAlert("error", "Invalid Parent Id");
+        if (!parentId || parentId < 1 || parentId > maxParentId) {
+          addAlert(
+            "error",
+            `Parent id must be a integer between 1 and ${maxParentId}`,
+          );
           return;
         }
       }
@@ -77,8 +110,12 @@ const PassengerCreationForm = () => {
         gender: gender.value,
         nationality: nationality.value,
         parent_id: null,
-        affiliated_passenger_ids: parsedAffiliates,
+        affiliated_passenger_ids: [] as number[],
       };
+
+      if (parsedAffiliates !== false) {
+        passengerData["affiliated_passenger_ids"] = parsedAffiliates;
+      }
 
       if (parseInt(age, 10) < 3) {
         passengerData["parent_id"] = parentId;
@@ -217,14 +254,14 @@ const PassengerCreationForm = () => {
                   alert.type === "error" ? (
                     <div
                       key={alert.id}
-                      className="opacity-100 transition-opacity duration-1000 ease-out"
+                      className="mr-5 opacity-100 transition-opacity duration-1000 ease-out"
                     >
                       <AlertError message={alert.message} />
                     </div>
                   ) : (
                     <div
                       key={alert.id}
-                      className="w-100 opacity-100 transition-opacity duration-1000 ease-out"
+                      className="mr-5 opacity-100 transition-opacity duration-1000 ease-out"
                     >
                       <AlertOk message={alert.message} />
                     </div>

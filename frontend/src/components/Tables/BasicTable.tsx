@@ -36,7 +36,7 @@ const BasicTable: React.FC<BasicTableProps> = ({ passengers = [] }) => {
         {passengers.map((passenger, key) => (
           <div
             key={passenger.id}
-            className={`grid cursor-pointer grid-cols-3 hover:bg-slate-200 dark:hover:bg-meta-4 ${
+            className={`grid grid-cols-3 hover:bg-slate-200 dark:hover:bg-meta-4 ${
               key === passengers.length - 1
                 ? ""
                 : "border-b border-stroke dark:border-strokedark"

@@ -141,7 +141,7 @@ const PilotCreationForm = () => {
               <div className="flex gap-4 ">
                 <div className="mb-4.5 w-1/2">
                   <label className="mb-3 block font-medium text-black dark:text-white">
-                    Name
+                    Name <span className=" text-red">*</span>
                   </label>
                   <input
                     type="text"
@@ -153,7 +153,7 @@ const PilotCreationForm = () => {
 
                 <div className="mb-4.5 w-1/2">
                   <label className="mb-3 block font-medium text-black dark:text-white">
-                    Age
+                    Age <span className=" text-red">*</span>
                   </label>
                   <input
                     placeholder="18-99"
@@ -167,7 +167,7 @@ const PilotCreationForm = () => {
 
               <div className="mb-4.5 ">
                 <label className="mb-3 block font-medium text-black dark:text-white">
-                  Gender
+                  Gender <span className=" text-red">*</span>
                 </label>
                 <Select
                   options={genderOptions}
@@ -179,7 +179,7 @@ const PilotCreationForm = () => {
 
               <div className="mb-4.5">
                 <label className="mb-3 block font-medium text-black dark:text-white">
-                  Nationality
+                  Nationality <span className=" text-red">*</span>
                 </label>
                 <Select
                   options={nationalityOptions}
@@ -191,7 +191,7 @@ const PilotCreationForm = () => {
 
               <div className="mb-4.5">
                 <label className="mb-3 block font-medium text-black dark:text-white">
-                  Known Languages
+                  Known Languages <span className=" text-red">*</span>
                 </label>
                 <Select
                   options={languageOptions}
@@ -212,7 +212,7 @@ const PilotCreationForm = () => {
 
               <div className="mb-4.5">
                 <label className="mb-3 block font-medium text-black dark:text-white">
-                  Aircraft Type
+                  Aircraft Type <span className=" text-red">*</span>
                 </label>
                 <Select
                   options={vehicleTypeOptions}
@@ -225,7 +225,7 @@ const PilotCreationForm = () => {
 
               <div className="mb-4.5">
                 <label className="mb-3 block font-medium text-black dark:text-white">
-                  Allowed Range
+                  Allowed Range <span className=" text-red">*</span>
                 </label>
                 <Select
                   options={rangeOptions}
@@ -237,7 +237,7 @@ const PilotCreationForm = () => {
 
               <div className="mb-4.5">
                 <label className="mb-3 block font-medium text-black dark:text-white">
-                  Seniority Level
+                  Seniority Level <span className=" text-red">*</span>
                 </label>
                 <Select
                   options={seniorityOptions}
@@ -260,14 +260,14 @@ const PilotCreationForm = () => {
                   alert.type === "error" ? (
                     <div
                       key={alert.id}
-                      className="w-100 opacity-100 transition-opacity duration-1000 ease-out"
+                      className="mr-5 opacity-100 transition-opacity duration-1000 ease-out"
                     >
                       <AlertError message={alert.message} />
                     </div>
                   ) : (
                     <div
                       key={alert.id}
-                      className="w-100 opacity-100 transition-opacity duration-1000 ease-out"
+                      className="mr-5 opacity-100 transition-opacity duration-1000 ease-out"
                     >
                       <AlertOk message={alert.message} />
                     </div>

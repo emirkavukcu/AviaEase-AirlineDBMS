@@ -21,6 +21,10 @@ interface Flight {
   source_airport: string;
   status: string;
   aircraft_type: string;
+  source_country: string;
+  destination_country: string;
+  source_city: string;
+  destination_city: string;
 }
 
 const FlightTable = () => {
@@ -79,7 +83,12 @@ const FlightTable = () => {
   useEffect(() => {
     if (selectedCountrySource) {
       const countryCities = airports
-        .filter((airport) => airport.country === selectedCountrySource)
+        .filter(
+          (airport) =>
+            airport.country === selectedCountrySource &&
+            airport.city &&
+            airport.city.trim() !== "",
+        )
         .map((airport) => airport.city)
         .sort();
       setCitiesSource([...new Set(countryCities)]);
@@ -108,7 +117,12 @@ const FlightTable = () => {
   useEffect(() => {
     if (selectedCityDestination) {
       const cityAirports = airports
-        .filter((airport) => airport.city === selectedCityDestination)
+        .filter(
+          (airport) =>
+            airport.city === selectedCityDestination &&
+            airport.city &&
+            airport.city.trim() !== "",
+        )
         .map((airport) => airport.airport_code);
       setAirportOptionsDestination(cityAirports);
     }
@@ -222,6 +236,7 @@ const FlightTable = () => {
             <br />
             <input
               type="date"
+              className="rounded-sm border border-graydark bg-white p-1  dark:border-strokedark dark:bg-boxdark"
               id="startDate"
               name="startDate"
               value={startDate}
@@ -235,6 +250,7 @@ const FlightTable = () => {
             <br />
             <input
               type="date"
+              className="rounded-sm border border-graydark bg-white p-1  dark:border-strokedark dark:bg-boxdark"
               id="endDate"
               name="endDate"
               value={endDate}
@@ -252,9 +268,11 @@ const FlightTable = () => {
             <Select
               options={uniqueCountryOptions}
               placeholder="Select Country"
-              onChange={(selectedOption) =>
-                setSelectedCountrySource(selectedOption?.value)
-              }
+              onChange={(selectedOption) => {
+                setSelectedCountrySource(selectedOption?.value);
+                setSelectedCitySource(null);
+                setSelectedAirportSource(null);
+              }}
               value={uniqueCountryOptions.find(
                 (country) => country.value === selectedCountrySource,
               )}
@@ -271,9 +289,10 @@ const FlightTable = () => {
                 label: city,
               }))}
               placeholder="Select City"
-              onChange={(selectedOption) =>
-                setSelectedCitySource(selectedOption?.value)
-              }
+              onChange={(selectedOption) => {
+                setSelectedCitySource(selectedOption?.value);
+                setSelectedAirportSource(null);
+              }}
               isDisabled={!selectedCountrySource}
               value={
                 selectedCitySource
@@ -319,9 +338,11 @@ const FlightTable = () => {
             <Select
               options={uniqueCountryOptions}
               placeholder="Select Country"
-              onChange={(selectedOption) =>
-                setSelectedCountryDestination(selectedOption?.value)
-              }
+              onChange={(selectedOption) => {
+                setSelectedCountryDestination(selectedOption?.value);
+                setSelectedCityDestination(null);
+                setSelectedAirportDestination(null);
+              }}
               value={uniqueCountryOptions.find(
                 (country) => country.value === selectedCountryDestination,
               )}
@@ -338,9 +359,10 @@ const FlightTable = () => {
                 label: city,
               }))}
               placeholder="Select City"
-              onChange={(selectedOption) =>
-                setSelectedCityDestination(selectedOption?.value)
-              }
+              onChange={(selectedOption) => {
+                setSelectedCityDestination(selectedOption?.value);
+                setSelectedAirportDestination(null);
+              }}
               isDisabled={!selectedCountryDestination}
               value={
                 selectedCityDestination
@@ -439,7 +461,7 @@ const FlightTable = () => {
         </div>
       </aside>
 
-      <div className="rounded-sm border border-stroke bg-white px-5 pb-2.5 pt-6 shadow-default dark:border-strokedark dark:bg-boxdark sm:px-7.5 xl:pb-1">
+      <div className="w-full rounded-sm border border-stroke bg-white px-5 pb-2.5 pt-6 shadow-default dark:border-strokedark dark:bg-boxdark sm:px-7.5 xl:pb-1">
         <div className="mb-4 flex items-center justify-between ">
           <h4 className="text-2xl font-semibold text-black dark:text-white">
             Flights
@@ -534,14 +556,29 @@ const FlightTable = () => {
                     {flight.distance}km
                   </p>
                 </div>
-                <div className="hidden items-center justify-center p-2.5 sm:flex">
+
+                <div className="hidden items-center justify-center p-2.5 text-center sm:flex">
                   <p className="text-black dark:text-white">
-                    {flight.source_airport}
+                    {flight.source_airport} <br />
+                    <p className="text-sm text-black dark:text-white">
+                      {flight.source_country}
+                      {flight.source_city && flight.source_city.trim() !== ""
+                        ? `, ${flight.source_city}`
+                        : ""}
+                    </p>
                   </p>
                 </div>
-                <div className="hidden items-center justify-center p-2.5 sm:flex">
+
+                <div className="hidden items-center justify-center p-2.5 text-center sm:flex">
                   <p className="text-black dark:text-white">
-                    {flight.destination_airport}
+                    {flight.destination_airport} <br />
+                    <p className="text-sm text-black dark:text-white">
+                      {flight.destination_country}
+                      {flight.destination_city &&
+                      flight.destination_city.trim() !== ""
+                        ? `, ${flight.destination_city}`
+                        : ""}
+                    </p>
                   </p>
                 </div>
                 <div className="hidden items-center justify-center p-2.5 sm:flex">
@@ -549,8 +586,17 @@ const FlightTable = () => {
                     {flight.aircraft_type}
                   </p>
                 </div>
+
                 <div className="hidden items-center justify-center p-2.5 sm:flex">
-                  <p className="text-black dark:text-white">
+                  <p
+                    className={`inline-flex rounded-full bg-opacity-10 px-3 py-1 text-sm font-medium ${
+                      flight.status === "active"
+                        ? "bg-success text-success"
+                        : flight.status === "passed"
+                          ? "bg-danger text-danger"
+                          : "bg-warning text-warning"
+                    }`}
+                  >
                     {flight.status.charAt(0).toUpperCase() +
                       flight.status.slice(1)}
                   </p>
