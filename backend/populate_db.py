@@ -314,6 +314,8 @@ def populate_flights_with_rosters(start_date, end_date, num_flights):
     if len(all_airports) < 2:
         return "Not enough airports to create flights."
 
+    flight_counter = 0  # 
+
     for _ in range(num_flights):
         source_airport = random.choice(all_airports)
         destination_airport = random.choice([airport for airport in all_airports if airport != source_airport])
@@ -350,7 +352,11 @@ def populate_flights_with_rosters(start_date, end_date, num_flights):
         )
         db.session.add(flight)
         db.session.flush()  # Flush to get the flight_number generated
-        
+
+        flight_counter += 1  # Increment the counter
+        if flight_counter % 25 == 0:  # If the counter is a multiple of 25
+            print(f"Created {flight_counter} flights")  # Print to the console
+
         # Auto generate seat plan for this flight
         result = seat_plan_auto(flight.flight_number, vehicle_type_id)
         if result != "Seats assigned successfully":

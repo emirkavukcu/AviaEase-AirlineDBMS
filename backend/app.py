@@ -43,9 +43,12 @@ def create_app(config_class=Config):
             if Airport.query.first() is None:
                 populate_airports()
             if Flight.query.first() is None:
-                start_date = datetime(2024, 5, 1)
+                start_date = datetime(2024, 1, 1)
                 end_date = datetime(2024, 12, 31)
-                populate_flights_with_rosters(start_date, end_date, 100)
+                populate_flights_with_rosters(start_date, end_date, 300)
+                start_date = datetime(2024, 5, 26)
+                end_date = datetime(2024, 5, 28)
+                populate_flights_with_rosters(start_date, end_date, 15)
                 print("Flights populated")
     
     register_blueprints(app)
